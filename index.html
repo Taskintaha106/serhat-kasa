@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serhat İnşaat - Kasa & Veresiye Takip</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Mobile PWA Meta Tags -->
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Serhat Kasa">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <!-- Lucide Icons (Offline & Fast) -->
+  <script src="lucide.min.js"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Üst Bar (Header) -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-box">
+        <i data-lucide="wrench"></i>
+      </div>
+      <div>
+        <h1 id="headerShopTitle">Serhat İnşaat</h1>
+        <span class="badge-status">
+          <span class="status-dot"></span> Çevrimdışı / Güvenli Yerel Kayıt
+        </span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div id="liveClock" class="clock-display">00:00:00</div>
+      <div id="liveDate" class="date-display">...</div>
+    </div>
+
+    <div class="header-right">
+      <button id="btnMobileInstall" class="btn btn-warning" style="display:none; background:#f59e0b; color:#0f172a; font-weight:700;" onclick="installMobileApp()" title="Uygulamayı telefonunuza yükleyin">
+        <i data-lucide="smartphone"></i> Telefona Yükle
+      </button>
+      <button class="btn btn-secondary" onclick="createInternalBackup()" title="Uygulama içine anlık yedek noktası kaydeder (Dosya indirmez)">
+        <i data-lucide="shield-check"></i> Hızlı Yedek Al
+      </button>
+      <button class="btn btn-secondary" onclick="manuelBulutaYukle && manuelBulutaYukle()" title="Tüm verileri şimdi Firestore bulutuna yükle" style="background:#0ea5e9;color:#fff;border-color:#0ea5e9;">
+        <i data-lucide="cloud-upload"></i> Buluta Yükle
+      </button>
+      <button class="btn btn-primary" onclick="openGunSonuModal()" title="Bugünkü ciroyu ve kasayı kapat">
+        <i data-lucide="calendar-check"></i> Gün Sonu Kapat
+      </button>
+    </div>
+  </header>
+
+  <!-- Ana İstatistik Kartları (KPIs) -->
+  <section class="kpi-container">
+    <div class="kpi-card border-green">
+      <div class="kpi-icon bg-green-light text-green">
+        <i data-lucide="banknote"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-title">Kasadaki Nakit</span>
+        <h2 id="kpiNakitKasa" class="kpi-value text-green">₺0,00</h2>
+        <span class="kpi-sub">Fiziksel çekmecedeki para</span>
+      </div>
+    </div>
+
+    <div class="kpi-card border-blue">
+      <div class="kpi-icon bg-blue-light text-blue">
+        <i data-lucide="credit-card"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-title">Banka / POS Kasa</span>
+        <h2 id="kpiBankaKasa" class="kpi-value text-blue">₺0,00</h2>
+        <span class="kpi-sub">Kartlı çekim bakiyesi</span>
+      </div>
+    </div>
+
+    <div class="kpi-card border-amber">
+      <div class="kpi-icon bg-amber-light text-amber">
+        <i data-lucide="book-open"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-title">Piyasa Alacağı (Veresiye)</span>
+        <h2 id="kpiVeresiyeAlacak" class="kpi-value text-amber">₺0,00</h2>
+        <span class="kpi-sub">Müşterilerden beklenen</span>
+      </div>
+    </div>
+
+    <div class="kpi-card border-red">
+      <div class="kpi-icon bg-red-light text-red">
+        <i data-lucide="truck"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-title">Toptancı Borçları</span>
+        <h2 id="kpiToptanciBorc" class="kpi-value text-red">₺0,00</h2>
+        <span class="kpi-sub">Ödenecek faturalar</span>
+      </div>
+    </div>
+
+    <div class="kpi-card border-purple">
+      <div class="kpi-icon bg-purple-light text-purple">
+        <i data-lucide="trending-up"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-title">Bugünkü Ciro</span>
+        <h2 id="kpiBugunCiro" class="kpi-value text-purple">₺0,00</h2>
+        <span id="kpiBugunNetKar" class="kpi-sub font-semibold">Net Kâr: ₺0,00</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hızlı İşlem Eylem Çubuğu -->
+  <section class="action-bar">
+    <div class="action-buttons">
+      <button class="btn btn-action btn-gelir" onclick="openModal('gelirModal')">
+        <i data-lucide="plus-circle"></i> + Satış / Gelir Ekle
+      </button>
+      <button class="btn btn-action btn-gider" onclick="openModal('giderModal')">
+        <i data-lucide="minus-circle"></i> - Masraf / Gider Ekle
+      </button>
+      <button class="btn btn-action btn-veresiye" onclick="openModal('veresiyeModal')">
+        <i data-lucide="user-plus"></i> Usta / Veresiye Kaydı
+      </button>
+      <button class="btn btn-action btn-toptanci" onclick="openModal('toptanciModal')">
+        <i data-lucide="receipt"></i> Toptancı / Mal Alımı
+      </button>
+    </div>
+  </section>
+
+  <!-- Ana İçerik ve Sekmeler -->
+  <main class="main-layout">
+    <!-- Sol / Üst Sekme Başlıkları -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="tab-kasa">
+        <i data-lucide="wallet"></i> Kasa Hareketleri
+      </button>
+      <button class="tab-btn" data-tab="tab-veresiye">
+        <i data-lucide="users"></i> Veresiye Defteri
+        <span id="badgeVeresiyeCount" class="tab-badge">0</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-toptanci">
+        <i data-lucide="factory"></i> Toptancı & Tedarikçiler
+      </button>
+      <button class="tab-btn" data-tab="tab-fiyat">
+        <i data-lucide="tag"></i> Hızlı Fiyat Rehberi
+      </button>
+      <button class="tab-btn" data-tab="tab-rapor">
+        <i data-lucide="bar-chart-3"></i> Kasa Raporları
+      </button>
+      <button class="tab-btn" data-tab="tab-ayarlar">
+        <i data-lucide="settings"></i> Ayarlar & Yedek
+      </button>
+    </nav>
+
+    <!-- SEKME 1: Kasa & Günlük Hareketler -->
+    <section id="tab-kasa" class="tab-content active">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Kasa Hareketleri ve Gelir-Gider Dökümü</h3>
+            <p class="text-muted">Dükkana giren ve çıkan tüm nakit ve kart hareketleri</p>
+          </div>
+          <div class="filter-group">
+            <select id="filterKasaZaman" onchange="renderKasaTable()">
+              <option value="today">Bugün</option>
+              <option value="week">Bu Hafta</option>
+              <option value="month">Bu Ay</option>
+              <option value="all">Tüm Zamanlar</option>
+            </select>
+            <select id="filterKasaTur" onchange="renderKasaTable()">
+              <option value="all">Tüm İşlemler</option>
+              <option value="gelir">Yalnızca Gelirler</option>
+              <option value="gider">Yalnızca Giderler</option>
+            </select>
+            <input type="text" id="searchKasaInput" placeholder="Açıklamada ara..." onkeyup="renderKasaTable()">
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tarih & Saat</th>
+                <th>İşlem Türü</th>
+                <th>Ödeme Şekli</th>
+                <th>Kategori / Açıklama</th>
+                <th class="text-right">Tutar</th>
+                <th class="text-center">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="kasaTableBody">
+              <!-- JS ile doldurulacak -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKME 2: Veresiye Defteri (Müşteri & Usta) -->
+    <section id="tab-veresiye" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Veresiye Defteri (Açık Hesaplar)</h3>
+            <p class="text-muted">Usta ve müşterilerin borç bakiyeleri ve tahsilat takibi</p>
+          </div>
+          <div class="filter-group">
+            <input type="text" id="searchMusteriInput" placeholder="Müşteri veya usta ara..." onkeyup="renderVeresiyeList()">
+            <button class="btn btn-primary" onclick="openModal('veresiyeModal')">
+              <i data-lucide="user-plus"></i> Yeni Müşteri / Borç Ekle
+            </button>
+          </div>
+        </div>
+
+        <div class="grid-veresiye">
+          <!-- Sol Müşteri Listesi -->
+          <div class="musteri-sidebar">
+            <div id="musteriListesi" class="musteri-list">
+              <!-- JS ile dinamik gelecek -->
+            </div>
+          </div>
+
+          <!-- Sağ Müşteri Detayı ve Hesap Özeti -->
+          <div class="musteri-detail-box" id="musteriDetailBox">
+            <div class="empty-state">
+              <i data-lucide="user-check"></i>
+              <p>Hesap detaylarını ve işlem geçmişini görmek için soldan bir müşteri seçin.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKME 3: Toptancı & Tedarikçiler -->
+    <section id="tab-toptanci" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Toptancı & Tedarikçi Takibi</h3>
+            <p class="text-muted">Mal aldığınız firmalar, faturalar ve ödenecek borçlar</p>
+          </div>
+          <div class="filter-group">
+            <input type="text" id="searchToptanciInput" placeholder="Toptancı ara..." onkeyup="renderToptanciTable()">
+            <button class="btn btn-primary" onclick="openModal('toptanciModal')">
+              <i data-lucide="plus"></i> Yeni Toptancı / Mal Faturası
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Toptancı / Firma</th>
+                <th>Yetkili & İletişim</th>
+                <th>Toplam Alınan Mal</th>
+                <th>Ödenen Tutar</th>
+                <th>Kalan Borç</th>
+                <th class="text-center">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="toptanciTableBody">
+              <!-- JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKME 4: Hızlı Fiyat Rehberi -->
+    <section id="tab-fiyat" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Hızlı Fiyat & Ürün Rehberi</h3>
+            <p class="text-muted">Fiyatını unuttuğunuz ürünleri 2 saniyede bulun</p>
+          </div>
+          <div class="filter-group">
+            <input type="text" id="searchFiyatInput" placeholder="Ürün adı, barkod veya ölçü ara (Örn: Çimento, 10'luk vida)..." onkeyup="renderFiyatTable()">
+            <button class="btn btn-primary" onclick="openModal('fiyatModal')">
+              <i data-lucide="plus"></i> Yeni Ürün & Fiyat Ekle
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ürün / Malzeme Adı</th>
+                <th>Kategori / Birim</th>
+                <th>Alış Fiyatı</th>
+                <th>Satış Fiyatı</th>
+                <th>Kâr Oranı</th>
+                <th class="text-center">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="fiyatTableBody">
+              <!-- JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKME 5: Raporlar & Kasa Durumu -->
+    <section id="tab-rapor" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Kasa & Kâr-Zarar Raporu</h3>
+            <p class="text-muted">Dükkanınızın mali durumu, ciro ve net kâr grafikleri</p>
+          </div>
+          <div class="filter-group">
+            <button class="btn btn-secondary" onclick="window.print()">
+              <i data-lucide="printer"></i> Bu Raporu Yazdır
+            </button>
+          </div>
+        </div>
+
+        <div class="rapor-ozet-grid">
+          <div class="rapor-kutu">
+            <span class="text-muted">Bu Ayki Toplam Satış (Ciro)</span>
+            <h3 id="raporAylikCiro" class="text-purple">₺0,00</h3>
+          </div>
+          <div class="rapor-kutu">
+            <span class="text-muted">Bu Ayki Dükkan Masrafları</span>
+            <h3 id="raporAylikGider" class="text-red">₺0,00</h3>
+          </div>
+          <div class="rapor-kutu">
+            <span class="text-muted">Bu Ayki Tahsil Edilen Veresiye</span>
+            <h3 id="raporAylikTahsilat" class="text-green">₺0,00</h3>
+          </div>
+          <div class="rapor-kutu">
+            <span class="text-muted">Kasadaki Net Değişim</span>
+            <h3 id="raporAylikNet" class="text-blue">₺0,00</h3>
+          </div>
+        </div>
+
+        <div class="gider-kategori-dagilim">
+          <h4 style="margin-bottom: 12px;">Giderlerin Harcama Türüne Göre Dağılımı</h4>
+          <div id="giderKategoriListesi" class="kategori-progress-list">
+            <!-- JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKME 6: Ayarlar & Veri Güvenliği -->
+    <section id="tab-ayarlar" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Dükkan Ayarları & Veri Güvenliği</h3>
+            <p class="text-muted">Tüm verileriniz sadece bu bilgisayarda yerel olarak saklanır</p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <div class="settings-box">
+            <h4>Dükkan Bilgileri</h4>
+            <div class="form-group">
+              <label>Dükkan Adı</label>
+              <input type="text" id="settingDukkanAdi" placeholder="Örn: Özdemir Nalbur & Yapı Market">
+            </div>
+            <div class="form-group">
+              <label>Telefon Numarası</label>
+              <input type="text" id="settingTelefon" placeholder="0532 ...">
+            </div>
+            <div class="form-group">
+              <label>Adres / Şehir</label>
+              <input type="text" id="settingAdres" placeholder="Dükkan adresi...">
+            </div>
+            <button class="btn btn-primary" onclick="kaydetAyarlar()">
+              <i data-lucide="check"></i> Ayarları Kaydet
+            </button>
+          </div>
+
+          <div class="settings-box">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px; gap: 10px;">
+              <div>
+                <h4><i data-lucide="shield-check" style="vertical-align: middle; color: var(--primary);"></i> Uygulama İçi Yedekler (Geri Dönüş Noktaları)</h4>
+                <p class="text-muted text-sm" style="margin-top: 4px;">
+                  Yedek aldığınızda dosya indirilmez; güvenle uygulama içinde saklanır. İstediğiniz an geçmiş bir yedek noktasına tek tıkla geri dönebilirsiniz.
+                </p>
+              </div>
+              <button class="btn btn-primary" onclick="createInternalBackup()" style="white-space:nowrap;">
+                <i data-lucide="plus-circle"></i> Yeni Yedek Al
+              </button>
+            </div>
+
+            <!-- Kayıtlı Yedekler Listesi -->
+            <div id="internalBackupsList" class="backups-list-container" style="max-height: 280px; overflow-y: auto; margin-top: 10px;">
+              <!-- JavaScript ile doldurulacak -->
+            </div>
+
+            <!-- İsteğe Bağlı Harici Dışa/İçe Aktarma (USB / Başka PC için) -->
+            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-color); display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <span class="text-xs text-muted" style="margin-right:auto;">İsteğe bağlı harici işlemler:</span>
+              <button class="btn btn-sm btn-secondary" onclick="exportDataToFile()" title="USB veya başka bilgisayara taşımak için dosya indir">
+                <i data-lucide="download"></i> Dosyaya Aktar (.json)
+              </button>
+              <label class="btn btn-sm btn-secondary" style="cursor: pointer; margin:0;" title="Harici dosyadan yükle">
+                <i data-lucide="upload"></i> Dosyadan Geri Yükle (.json)
+                <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importData(event)">
+              </label>
+              <button class="btn btn-sm btn-danger-outline" onclick="ornekVeriYukle()">
+                <i data-lucide="sparkles"></i> Örnek Veri Yükle
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= MODALLAR ================= -->
+
+  <!-- Modal 1: Satış / Gelir Ekle -->
+  <div id="gelirModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="text-green"><i data-lucide="plus-circle"></i> Yeni Gelir / Satış Ekle</h3>
+        <button class="modal-close" onclick="closeModal('gelirModal')">&times;</button>
+      </div>
+      <form onsubmit="handleGelirSubmit(event)">
+        <div class="form-group">
+          <label>Satış Tutarı (₺) *</label>
+          <input type="number" step="0.01" id="gelirTutar" required class="input-lg text-green font-bold" placeholder="0.00" autofocus>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ödeme Türü *</label>
+            <select id="gelirKasaTuru" required>
+              <option value="nakit">💵 Nakit Para (Çekmece)</option>
+              <option value="kart">💳 Kredi Kartı (POS)</option>
+              <option value="havale">🏦 Havale / FAST</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Kategori</label>
+            <select id="gelirKategori">
+              <option value="Perakende Satış">Perakende Satış</option>
+              <option value="Boya & Kimyasal">Boya & Kimyasal Satışı</option>
+              <option value="Tesisat & Hırdavat">Tesisat & Hırdavat</option>
+              <option value="İnşaat Malzemesi">İnşaat Malzemesi</option>
+              <option value="Diğer Gelir">Diğer Gelir</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Satılan Malzeme / Açıklama</label>
+          <input type="text" id="gelirAciklama" placeholder="Örn: 2 kutu tavan boyası, 1 rulo fırça">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('gelirModal')">Vazgeç</button>
+          <button type="submit" class="btn btn-success"><i data-lucide="check"></i> Kasaya Ekle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Masraf / Gider Ekle -->
+  <div id="giderModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="text-red"><i data-lucide="minus-circle"></i> Yeni Masraf / Gider Ekle</h3>
+        <button class="modal-close" onclick="closeModal('giderModal')">&times;</button>
+      </div>
+      <form onsubmit="handleGiderSubmit(event)">
+        <div class="form-group">
+          <label>Gider Tutarı (₺) *</label>
+          <input type="number" step="0.01" id="giderTutar" required class="input-lg text-red font-bold" placeholder="0.00" autofocus>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Hangi Kasadan Ödendi? *</label>
+            <select id="giderKasaTuru" required>
+              <option value="nakit">💵 Nakit Kasa (Çekmece)</option>
+              <option value="kart">💳 Banka / Şirket Kartı</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Gider Türü *</label>
+            <select id="giderKategori" required>
+              <option value="Dükkan Kirası">Dükkan Kirası</option>
+              <option value="Elektrik & Su Faturası">Elektrik & Su Faturası</option>
+              <option value="Çay & Yemek Masrafı">Çay & Yemek Masrafı</option>
+              <option value="Nakliye & Kargo">Nakliye & Kargo</option>
+              <option value="Personel Avans/Maaş">Personel Avans/Maaş</option>
+              <option value="Bağkur & Vergi">Bağkur & Vergi</option>
+              <option value="Küçük Sarf Malzeme">Dükkan İçi Sarf / Temizlik</option>
+              <option value="Diğer Masraf">Diğer Masraf</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Gider Açıklaması</label>
+          <input type="text" id="giderAciklama" placeholder="Örn: Dükkan çay şekeri ve öğle yemeği">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('giderModal')">Vazgeç</button>
+          <button type="submit" class="btn btn-danger"><i data-lucide="check"></i> Gideri Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Yeni Müşteri / Veresiye Aç -->
+  <div id="veresiyeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="text-amber"><i data-lucide="user-plus"></i> Usta / Müşteri Hesabı Aç</h3>
+        <button class="modal-close" onclick="closeModal('veresiyeModal')">&times;</button>
+      </div>
+      <form onsubmit="handleMusteriSubmit(event)">
+        <div class="form-group">
+          <label>Müşteri / Usta Adı Soyadı *</label>
+          <input type="text" id="musteriAd" required placeholder="Örn: Ahmet Boyacı (Ahmet Usta)">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Telefon Numarası</label>
+            <input type="tel" id="musteriTelefon" placeholder="0532 000 00 00">
+          </div>
+          <div class="form-group">
+            <label>Mesleği / Ünvanı</label>
+            <input type="text" id="musteriMeslek" placeholder="Örn: Boyacı, Su Tesisatçısı, Müteahhit">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Açılış Borç Bakiyesi (Varsa)</label>
+          <input type="number" step="0.01" id="musteriBaslangicBorc" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>Notlar (Adres, şantiye yeri vb.)</label>
+          <textarea id="musteriNot" rows="2" placeholder="Örn: Yeşiltepe şantiyesinde çalışıyor"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('veresiyeModal')">Vazgeç</button>
+          <button type="submit" class="btn btn-primary"><i data-lucide="check"></i> Müşteriyi Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: Müşteriye Borç Malzeme Ekle -->
+  <div id="borcEkleModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="text-amber"><i data-lucide="file-plus"></i> Veresiye Malzeme Çıkışı</h3>
+        <button class="modal-close" onclick="closeModal('borcEkleModal')">&times;</button>
+      </div>
+      <form onsubmit="handleBorcEkleSubmit(event)">
+        <input type="hidden" id="borcMusteriId">
+        <p id="borcMusteriInfo" class="font-semibold text-primary" style="margin-bottom: 12px;"></p>
+        <div class="form-group">
+          <label>Verilen Malzemenin Tutarı (₺) *</label>
+          <input type="number" step="0.01" id="borcTutar" required class="input-lg text-amber font-bold" placeholder="0.00" autofocus>
+        </div>
+        <div class="form-group">
+          <label>Verilen Malzemeler & Detay *</label>
+          <textarea id="borcDetay" rows="3" required placeholder="Örn: 5 torba çimento, 2 kutu silikon, 10 mt hortum"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('borcEkleModal')">Vazgeç</button>
+          <button type="submit" class="btn btn-amber"><i data-lucide="check"></i> Veresiyeye Ekle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Müşteriden Tahsilat Al -->
+  <div id="tahsilatModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="text-green"><i data-lucide="hand-coins"></i> Veresiye Tahsilatı Al</h3>
+        <button class="modal-close" onclick="closeModal('tahsilatModal')">&times;</button>
+      </div>
+      <form onsubmit="handleTahsilatSubmit(event)">
+        <input type="hidden" id="tahsilatMusteriId">
+        <p id="tahsilatMusteriInfo" class="font-semibold text-primary" style="margin-bottom: 12px;"></p>
+        <div class="form-group">
+          <label>Tahsil Edilen Tutar (₺) *</label>
+          <input type="number" step="0.01" id="tahsilatTutar" required class="input-lg text-green font-bold" placeholder="0.00" autofocus>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Paranın Girdiği Kasa *</label>
+            <select id="tahsilatKasaTuru" required>
+              <option value="nakit">💵 Nakit Kasa (Çekmece)</option>
+              <option value="kart">💳 Kredi Kartı / POS</option>
+              <option value="havale">🏦 Banka Havalesi</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Makbuz / Açıklama</label>
+            <input type="text" id="tahsilatAciklama" placeholder="Örn: Kısmi nakit ödeme yapıldı">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('tahsilatModal')">Vazgeç</button>
+          <button type="submit" class="btn btn-success"><i data-lucide="check"></i> Tahsilatı Kasaya İşle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 6: Toptancı Ekle / Mal Faturası Girişi -->
+  <div id="toptanciModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="text-blue"><i data-lucide="factory"></i> Toptancı & Fatura Kaydı</h3>
+        <button class="modal-close" onclick="closeModal('toptanciModal')">&times;</button>
+      </div>
+      <form onsubmit="handleToptanciSubmit(event)">
+        <div class="form-group">
+          <label>Toptancı / Firma Adı *</label>
+          <input type="text" id="toptanciFirma" required placeholder="Örn: Polisan Boya Dağıtım A.Ş.">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Yetkili / Plasiyer</label>
+            <input type="text" id="toptanciYetkili" placeholder="Örn: Mehmet Bey">
+          </div>
+          <div class="form-group">
+            <label>Telefon</label>
+            <input type="tel" id="toptanciTelefon" placeholder="0533 000 00 00">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fatura / Alınan Mal Tutarı (₺) *</label>
+            <input type="number" step="0.01" id="toptanciFaturaTutar" required placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label>Hemen Peşin Ödenen (₺)</label>
+            <input type="number" step="0.01" id="toptanciPesinTutar" placeholder="0.00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Alınan Ürünler & Fatura No</label>
+          <input type="text" id="toptanciNot" placeholder="Örn: Fatura No: 4921, 50 koli silikon ve boya">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('toptanciModal')">Vazgeç</button>
+          <button type="submit" class="btn btn-primary"><i data-lucide="check"></i> Toptancıyı Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 7: Toptancıya Ödeme Yap -->
+  <div id="toptanciOdemeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="text-red"><i data-lucide="send"></i> Toptancıya Ödeme Yap</h3>
+        <button class="modal-close" onclick="closeModal('toptanciOdemeModal')">&times;</button>
+      </div>
+      <form onsubmit="handleToptanciOdemeSubmit(event)">
+        <input type="hidden" id="odemeToptanciId">
+        <p id="odemeToptanciInfo" class="font-semibold text-primary" style="margin-bottom: 12px;"></p>
+        <div class="form-group">
+          <label>Ödenen Tutar (₺) *</label>
+          <input type="number" step="0.01" id="odemeTutar" required class="input-lg text-red font-bold" placeholder="0.00" autofocus>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ödemenin Çıktığı Kasa *</label>
+            <select id="odemeKasaTuru" required>
+              <option value="nakit">💵 Nakit Kasa (Çekmece)</option>
+              <option value="kart">💳 Banka / Şirket Hesabı</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Açıklama / Makbuz No</label>
+            <input type="text" id="odemeAciklama" placeholder="Örn: Plasiyere elden nakit verildi">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('toptanciOdemeModal')">Vazgeç</button>
+          <button type="submit" class="btn btn-danger"><i data-lucide="check"></i> Ödemeyi Kaydet ve Kasadan Düş</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 8: Hızlı Ürün & Fiyat Ekle -->
+  <div id="fiyatModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="text-purple"><i data-lucide="tag"></i> Hızlı Ürün & Fiyat Ekle</h3>
+        <button class="modal-close" onclick="closeModal('fiyatModal')">&times;</button>
+      </div>
+      <form onsubmit="handleFiyatSubmit(event)">
+        <div class="form-group">
+          <label>Ürün / Malzeme Adı *</label>
+          <input type="text" id="fiyatUrunAdi" required placeholder="Örn: Kalekim 1051 Seramik Yapıştırıcı 25kg">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Kategori / Birim</label>
+            <input type="text" id="fiyatBirim" placeholder="Örn: Torba, Adet, Kutu, Metre">
+          </div>
+          <div class="form-group">
+            <label>Barkod / Kod (Varsa)</label>
+            <input type="text" id="fiyatBarkod" placeholder="8690000...">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Alış Fiyatı (₺)</label>
+            <input type="number" step="0.01" id="fiyatAlis" placeholder="0.00" oninput="hesaplaKarOrani()">
+          </div>
+          <div class="form-group">
+            <label>Satış Fiyatı (₺) *</label>
+            <input type="number" step="0.01" id="fiyatSatis" required placeholder="0.00" oninput="hesaplaKarOrani()">
+          </div>
+        </div>
+        <div id="karOraniGosterge" class="text-sm font-semibold text-green" style="margin-bottom: 12px;"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('fiyatModal')">Vazgeç</button>
+          <button type="submit" class="btn btn-primary"><i data-lucide="check"></i> Ürünü Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 9: Gün Sonu Raporu Modalı (Yazdırılabilir) -->
+  <div id="gunSonuModal" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 class="text-purple"><i data-lucide="receipt"></i> Gün Sonu Kasa Mutabakatı</h3>
+        <button class="modal-close" onclick="closeModal('gunSonuModal')">&times;</button>
+      </div>
+      <div id="gunSonuPrintArea" class="gun-sonu-raporu">
+        <div class="gun-sonu-baslik">
+          <h2 id="gunSonuDukkanAdi">Serhat İnşaat</h2>
+          <p id="gunSonuTarihSaat" class="text-muted">Gün Sonu Raporu</p>
+        </div>
+
+        <div class="gun-sonu-grid">
+          <div class="gun-sonu-item">
+            <span>Bugünkü Nakit Satışlar:</span>
+            <strong id="gsNakitSatis" class="text-green">₺0,00</strong>
+          </div>
+          <div class="gun-sonu-item">
+            <span>Bugünkü Kredi Kartı / POS:</span>
+            <strong id="gsKartSatis" class="text-blue">₺0,00</strong>
+          </div>
+          <div class="gun-sonu-item">
+            <span>Veresiye Tahsilatları (Kasa Girişi):</span>
+            <strong id="gsTahsilat" class="text-green">₺0,00</strong>
+          </div>
+          <div class="gun-sonu-item">
+            <span>Bugün Verilen Yeni Veresiye:</span>
+            <strong id="gsYeniVeresiye" class="text-amber">₺0,00</strong>
+          </div>
+          <div class="gun-sonu-item">
+            <span>Bugünkü Dükkan Harcamaları / Masraflar:</span>
+            <strong id="gsGiderler" class="text-red">₺0,00</strong>
+          </div>
+          <div class="gun-sonu-item highlight-box">
+            <span>BUGÜNKÜ TOPLAM CİRO:</span>
+            <strong id="gsToplamCiro" class="text-purple">₺0,00</strong>
+          </div>
+          <div class="gun-sonu-item highlight-box">
+            <span>ÇEKMECEDE OLMASI GEREKEN NAKİT:</span>
+            <strong id="gsCekmeceNakit" class="text-green">₺0,00</strong>
+          </div>
+        </div>
+
+        <div style="margin-top: 15px; font-size: 13px; color: #64748b; text-align: center;">
+          Bu rapor dükkan kapanışında kasa sayımı ve mutabakat için otomatik oluşturulmuştur.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="printGunSonu()"><i data-lucide="printer"></i> Fiş Olarak Yazdır</button>
+        <button class="btn btn-primary" onclick="closeModal('gunSonuModal')"><i data-lucide="check"></i> Tamam</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bildirim Kutusu (Toast) -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Firebase CDN -->
+  <script type="module" src="firebase-init.js"></script>
+  <!-- Uygulama Scripti -->
+  <script src="app.js" defer></script>
+</body>
+</html>
