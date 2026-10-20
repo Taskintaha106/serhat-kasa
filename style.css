@@ -1983,28 +1983,41 @@ html, body {
 /* ==================== METRAJ & SARFİYAT HESAPLAYICI MODÜLÜ ==================== */
 .metraj-cat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
   margin-bottom: 20px;
 }
 
 .metraj-cat-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px 8px;
   background: #f8fafc;
   border: 1px solid #cbd5e1;
   border-radius: 12px;
   color: #334155;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.16s ease;
-  text-align: left;
+  text-align: center;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+  line-height: 1.25;
 }
 
-.metraj-cat-btn i {
+.metraj-cat-btn span {
+  display: block;
+  width: 100%;
+  word-break: break-word;
+}
+
+.metraj-cat-btn i,
+.metraj-cat-btn svg {
   width: 20px;
   height: 20px;
   color: #2563eb;
@@ -2024,13 +2037,14 @@ html, body {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
-.metraj-cat-btn.active i {
+.metraj-cat-btn.active i,
+.metraj-cat-btn.active svg {
   color: #ffffff;
 }
 
 .metraj-workspace {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
   gap: 20px;
   align-items: start;
 }
@@ -2040,22 +2054,56 @@ html, body {
   border: 1px solid #cbd5e1;
   border-radius: 14px;
   padding: 20px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .metraj-input-panel h4 {
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 800;
   color: #0f172a;
   margin-bottom: 14px;
   display: flex;
   align-items: center;
   gap: 8px;
+  line-height: 1.3;
+}
+
+.metraj-input-panel .form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+
+.metraj-input-panel .form-group {
+  min-width: 0;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.metraj-input-panel .form-group label {
+  display: block;
+  font-size: 0.81rem;
+  line-height: 1.25;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.metraj-input-panel input,
+.metraj-input-panel select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  text-overflow: ellipsis;
 }
 
 .metraj-mode-toggle {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 5px;
   background: #e2e8f0;
   padding: 4px;
   border-radius: 9px;
@@ -2065,12 +2113,15 @@ html, body {
 .metraj-mode-btn {
   border: none;
   background: transparent;
-  padding: 7px 10px;
+  padding: 8px 6px;
   border-radius: 7px;
-  font-size: 0.8rem;
+  font-size: 0.77rem;
   font-weight: 700;
   color: #475569;
   cursor: pointer;
+  text-align: center;
+  line-height: 1.2;
+  min-width: 0;
 }
 
 .metraj-mode-btn.active {
@@ -2085,12 +2136,15 @@ html, body {
   border-radius: 14px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .metraj-result-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 10px;
   padding-bottom: 14px;
@@ -2102,6 +2156,48 @@ html, body {
   font-size: 1.05rem;
   font-weight: 800;
   color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.metraj-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.metraj-summary-box {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.metraj-summary-box .sum-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 3px;
+}
+
+.metraj-summary-box .sum-val {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.metraj-summary-box .sum-sub {
+  display: block;
+  font-size: 0.73rem;
+  color: #2563eb;
+  font-weight: 600;
+  margin-top: 2px;
 }
 
 .metraj-items-list {
@@ -2115,43 +2211,75 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   padding: 12px 15px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid #e2e8f0;
   border-left: 4px solid #2563eb;
   border-radius: 10px;
+  min-width: 0;
+}
+
+.metraj-item-info {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .metraj-item-info strong {
   display: block;
-  font-size: 0.94rem;
+  font-size: 0.93rem;
   color: #0f172a;
   font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 3px;
+  word-break: break-word;
 }
 
-.metraj-item-info span {
-  font-size: 0.78rem;
+.metraj-item-info .item-desc {
+  display: block;
+  font-size: 0.79rem;
   color: #64748b;
+  line-height: 1.35;
+}
+
+.metraj-item-info .item-pack-badge {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 3px 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .metraj-item-qty {
   text-align: right;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  min-width: 112px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 9px;
+  padding: 8px 12px;
 }
 
 .metraj-item-qty .qty-main {
-  font-size: 1.12rem;
+  font-size: 1.08rem;
   font-weight: 800;
   color: #15803d;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .metraj-item-qty .qty-sub {
   display: block;
-  font-size: 0.75rem;
-  color: #475569;
-  font-weight: 600;
+  font-size: 0.74rem;
+  color: #166534;
+  font-weight: 700;
+  margin-top: 2px;
+  white-space: nowrap;
 }
 
 .metraj-tip-box {
@@ -2161,7 +2289,7 @@ html, body {
   padding: 12px 14px;
   border-radius: 10px;
   font-size: 0.83rem;
-  line-height: 1.45;
+  line-height: 1.5;
   margin-bottom: 16px;
 }
 
@@ -2173,6 +2301,12 @@ html, body {
   border-top: 1px solid #e2e8f0;
 }
 
+@media (max-width: 1150px) {
+  .metraj-cat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 960px) {
   .metraj-workspace {
     grid-template-columns: 1fr;
@@ -2181,20 +2315,42 @@ html, body {
 
 @media (max-width: 768px) {
   .metraj-cat-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 7px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
   .metraj-cat-btn {
-    padding: 10px;
-    font-size: 0.78rem;
-    gap: 7px;
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    gap: 8px;
+  }
+  .metraj-cat-btn:first-child {
+    grid-column: 1 / -1;
   }
   .metraj-input-panel,
   .metraj-result-panel {
     padding: 14px 12px;
   }
+  .metraj-input-panel .form-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px;
+  }
+  .metraj-summary-strip {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
   .metraj-item-card {
-    padding: 10px 12px;
+    padding: 11px 12px;
+    gap: 10px;
+  }
+  .metraj-item-qty {
+    min-width: 96px;
+    padding: 7px 10px;
+  }
+  .metraj-item-qty .qty-main {
+    font-size: 0.98rem;
   }
   .metraj-actions-bar {
     flex-direction: column;

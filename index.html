@@ -19,7 +19,7 @@
   <!-- Lucide Icons (Offline & Fast) -->
   <script src="lucide.min.js"></script>
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
 
@@ -532,7 +532,7 @@
             <span>Alçı, Sıva & Şap Harcı</span>
           </button>
           <button type="button" class="metraj-cat-btn" data-calc="duvar_orme" onclick="selectMetrajCalc('duvar_orme')">
-            <i data-lucide="Cuboid" style="display:none;"></i><i data-lucide="box"></i>
+            <i data-lucide="box"></i>
             <span>Tuğla, Gazbeton & Harç</span>
           </button>
           <button type="button" class="metraj-cat-btn" data-calc="mantolama" onclick="selectMetrajCalc('mantolama')">
@@ -551,11 +551,15 @@
           <!-- Sağ: Hesaplanan Malzeme Reçetesi ve Aksiyonlar -->
           <div class="metraj-result-panel">
             <div class="metraj-result-header">
-              <div>
+              <div style="min-width:0; flex:1;">
                 <h4 id="metrajResultTitle">📋 Gereken Malzeme Listesi & Sarfiyat</h4>
                 <span id="metrajResultSubtitle" class="text-xs text-muted">Ölçü değiştikçe miktarlar otomatik güncellenir</span>
               </div>
-              <span id="metrajAreaBadge" class="badge-status-approved" style="font-size:0.85rem;">0 m²</span>
+              <span id="metrajAreaBadge" class="badge-status-approved" style="font-size:0.85rem; white-space:nowrap;">0 m²</span>
+            </div>
+
+            <div id="metrajSummaryStrip" class="metraj-summary-strip" style="display:none;">
+              <!-- JS ile doldurulacak özet kutular -->
             </div>
 
             <div id="metrajItemsList" class="metraj-items-list">
@@ -1318,7 +1322,7 @@
   <!-- Firebase CDN Modülü -->
   <script type="module" src="firebase-init.js?v=15"></script>
   <!-- Uygulama Scripti -->
-  <script src="app.js?v=16" defer></script>
+  <script src="app.js?v=17" defer></script>
 
   <!-- Auth UI İşleyicileri -->
   <script>
