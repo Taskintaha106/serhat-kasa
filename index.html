@@ -18,8 +18,8 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <!-- Lucide Icons (Offline & Fast) -->
   <script src="lucide.min.js"></script>
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css?v=12">
+  <!--Custom CSS -->
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 
@@ -43,23 +43,23 @@
     </div>
 
     <div class="header-right">
-      <div id="userProfileBadge" style="display:none; align-items:center; gap:6px; padding:6px 12px; background:#f1f5f9; border-radius:8px; font-weight:600; font-size:13px; color:#334155; border:1px solid #e2e8f0;">
-        <i data-lucide="store" style="width:16px;height:16px;color:#2563eb;"></i>
+      <div id="userProfileBadge" class="header-user-badge" style="display:none;">
+        <i data-lucide="store" style="width:15px;height:15px;color:#60a5fa;"></i>
         <span id="headerUsernameText">Dükkan</span>
       </div>
-      <button id="btnMobileInstall" class="btn btn-warning" style="display:none; background:#f59e0b; color:#0f172a; font-weight:700;" onclick="installMobileApp()" title="Uygulamayı telefonunuza yükleyin">
+      <button id="btnMobileInstall" class="btn btn-header-amber" style="display:none;" onclick="installMobileApp()" title="Uygulamayı telefonunuza yükleyin">
         <i data-lucide="smartphone"></i> Telefona Yükle
       </button>
-      <button class="btn btn-secondary" onclick="createInternalBackup()" title="Uygulama içine anlık yedek noktası kaydeder (Dosya indirmez)">
+      <button class="btn btn-header-glass" onclick="createInternalBackup()" title="Uygulama içine anlık yedek noktası kaydeder (Dosya indirmez)">
         <i data-lucide="shield-check"></i> Hızlı Yedek Al
       </button>
-      <button class="btn btn-secondary" onclick="manuelBulutaYukle && manuelBulutaYukle()" title="Tüm verileri şimdi Firestore bulutuna yükle" style="background:#0ea5e9;color:#fff;border-color:#0ea5e9;">
+      <button class="btn btn-header-cyan" onclick="manuelBulutaYukle && manuelBulutaYukle()" title="Tüm verileri şimdi Firestore bulutuna yükle">
         <i data-lucide="cloud-upload"></i> Buluta Yükle
       </button>
-      <button class="btn btn-primary" onclick="openGunSonuModal()" title="Bugünkü ciroyu ve kasayı kapat">
+      <button class="btn btn-header-primary" onclick="openGunSonuModal()" title="Bugünkü ciroyu ve kasayı kapat">
         <i data-lucide="calendar-check"></i> Gün Sonu Kapat
       </button>
-      <button id="btnLogout" class="btn btn-secondary" style="display:none; background:#fee2e2; color:#dc2626; border-color:#fca5a5; font-weight:600;" onclick="firebaseDB.logout()" title="Oturumu Kapat">
+      <button id="btnLogout" class="btn btn-header-danger" style="display:none;" onclick="firebaseDB.logout()" title="Oturumu Kapat">
         <i data-lucide="log-out"></i> Çıkış
       </button>
     </div>
@@ -135,7 +135,7 @@
       <button class="btn btn-action btn-veresiye" onclick="openModal('veresiyeModal')">
         <i data-lucide="user-plus"></i> Usta / Veresiye Kaydı
       </button>
-      <button class="btn btn-action" style="background-color: var(--purple); color: #fff;" onclick="openProposalModal()">
+      <button class="btn btn-action btn-teklif" onclick="openProposalModal()">
         <i data-lucide="file-spreadsheet"></i> + Fiyat Teklifi Hazırla
       </button>
       <button class="btn btn-action btn-toptanci" onclick="openModal('toptanciModal')">

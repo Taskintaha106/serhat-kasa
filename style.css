@@ -1,17 +1,18 @@
 /* ==========================================================
-   NALBUR KASA & VERESİYE SİSTEMİ - MODERN DESKTOP STYLES
+   NALBUR KASA & VERESİYE SİSTEMİ - ENTERPRISE PRO DESIGN
    ========================================================== */
 
 :root {
   --primary: #2563eb;
   --primary-hover: #1d4ed8;
-  --bg-main: #f8fafc;
+  --bg-main: #eef2f6;
   --card-bg: #ffffff;
   --text-main: #0f172a;
+  --text-dark: #1e293b;
   --text-muted: #64748b;
-  --border-color: #e2e8f0;
+  --border-color: #dbe2ea;
   
-  --green: #16a34a;
+  --green: #15803d;
   --green-light: #dcfce7;
   --red: #dc2626;
   --red-light: #fee2e2;
@@ -19,46 +20,72 @@
   --amber-light: #fef3c7;
   --blue: #0284c7;
   --blue-light: #e0f2fe;
-  --purple: #7c3aed;
+  --purple: #6d28d9;
   --purple-light: #ede9fe;
   
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.05);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 6px 16px -3px rgba(15, 23, 42, 0.08), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 20px 30px -8px rgba(15, 23, 42, 0.16), 0 8px 12px -4px rgba(15, 23, 42, 0.06);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Modern İnce Kaydırma Çubukları (Scrollbar) */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 body {
   background-color: var(--bg-main);
+  background-image:
+    radial-gradient(1100px 460px at 10% -5%, rgba(37, 99, 235, 0.08), transparent 70%),
+    radial-gradient(900px 420px at 92% -2%, rgba(109, 40, 217, 0.06), transparent 65%),
+    linear-gradient(180deg, #f4f7fb 0%, #e9eff6 100%);
+  background-attachment: fixed;
   color: var(--text-main);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 16px 24px;
+  padding: 18px 26px;
   overflow-x: hidden;
+  line-height: 1.45;
 }
 
-/* Header */
+/* ==================== KURUMSAL KOYU LACİVERT ÜST BAR ==================== */
 .app-header {
-  background: var(--card-bg);
+  background: linear-gradient(135deg, #0b132b 0%, #172554 55%, #1e293b 100%);
   border-radius: var(--radius-lg);
-  padding: 14px 24px;
+  padding: 15px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
+  box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 20px;
+  color: #ffffff;
 }
 
 .header-left {
@@ -68,15 +95,16 @@ body {
 }
 
 .logo-box {
-  width: 44px;
-  height: 44px;
-  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  width: 46px;
+  height: 46px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   color: #fff;
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .logo-box i {
@@ -85,69 +113,157 @@ body {
 }
 
 .app-header h1 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .badge-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
-  font-weight: 500;
-  margin-top: 2px;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.app-header .badge-status {
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.09);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.data-table .badge-status {
+  background: #f1f5f9;
+  color: #334155;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-weight: 600;
 }
 
 .status-dot {
   width: 8px;
   height: 8px;
-  background-color: var(--green);
+  background-color: #22c55e;
   border-radius: 50%;
   display: inline-block;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
 }
 
 .header-center {
   text-align: center;
+  background: rgba(15, 23, 42, 0.38);
+  padding: 6px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .clock-display {
   font-size: 1.35rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  color: var(--text-main);
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
 }
 
 .date-display {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  font-size: 0.78rem;
+  color: #94a3b8;
   font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 .header-right {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-/* KPI Kartları */
+.header-user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.btn-header-glass {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+}
+.btn-header-glass:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+
+.btn-header-cyan {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.35);
+}
+.btn-header-cyan:hover {
+  filter: brightness(1.07);
+}
+
+.btn-header-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+}
+.btn-header-primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-header-amber {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+.btn-header-danger {
+  background: rgba(239, 68, 68, 0.16) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(248, 113, 113, 0.3) !important;
+}
+.btn-header-danger:hover {
+  background: rgba(239, 68, 68, 0.28) !important;
+  color: #ffffff !important;
+}
+
+/* ==================== KPI FİNANS KARTLARI ==================== */
 .kpi-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: 15px;
   margin-bottom: 20px;
 }
 
 .kpi-card {
-  background: var(--card-bg);
+  background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
   border-radius: var(--radius-md);
-  padding: 16px;
+  padding: 18px 18px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  gap: 15px;
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(203, 213, 225, 0.75);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .kpi-card:hover {
@@ -162,29 +278,30 @@ body {
 .border-purple { border-left: 4px solid var(--purple); }
 
 .kpi-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .kpi-icon i {
-  width: 22px;
-  height: 22px;
+  width: 23px;
+  height: 23px;
 }
 
-.bg-green-light { background-color: var(--green-light); }
+.bg-green-light { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); }
 .text-green { color: var(--green); }
-.bg-blue-light { background-color: var(--blue-light); }
+.bg-blue-light { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); }
 .text-blue { color: var(--blue); }
-.bg-amber-light { background-color: var(--amber-light); }
+.bg-amber-light { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
 .text-amber { color: var(--amber); }
-.bg-red-light { background-color: var(--red-light); }
+.bg-red-light { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); }
 .text-red { color: var(--red); }
-.bg-purple-light { background-color: var(--purple-light); }
+.bg-purple-light { background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); }
 .text-purple { color: var(--purple); }
 
 .kpi-info {
@@ -193,54 +310,65 @@ body {
 }
 
 .kpi-title {
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.74rem;
+  font-weight: 700;
   text-transform: uppercase;
-  color: var(--text-muted);
-  letter-spacing: 0.02em;
+  color: #475569;
+  letter-spacing: 0.04em;
 }
 
 .kpi-value {
-  font-size: 1.4rem;
+  font-size: 1.48rem;
   font-weight: 800;
   line-height: 1.2;
-  margin: 2px 0;
+  margin: 3px 0;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
 }
 
 .kpi-sub {
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
+  font-weight: 500;
 }
 
-/* Hızlı Eylem Çubuğu */
+/* ==================== HIZLI EYLEM ÇUBUĞU ==================== */
 .action-bar {
   margin-bottom: 20px;
 }
 
 .action-buttons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
   gap: 12px;
 }
 
 .btn-action {
   padding: 14px 18px;
   border-radius: var(--radius-md);
-  font-size: 0.95rem;
+  font-size: 0.94rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: var(--shadow-sm);
+  transition: all 0.16s ease;
+  box-shadow: 0 4px 10px -2px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
 }
 
 .btn-action:hover {
   transform: translateY(-2px);
-  filter: brightness(0.96);
+  filter: brightness(1.05);
+  box-shadow: 0 8px 16px -3px rgba(15, 23, 42, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.btn-action:active {
+  transform: translateY(0);
 }
 
 .btn-action i {
@@ -249,30 +377,34 @@ body {
 }
 
 .btn-gelir {
-  background-color: var(--green);
-  color: #fff;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
 }
 
 .btn-gider {
-  background-color: var(--red);
-  color: #fff;
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
 }
 
 .btn-veresiye {
-  background-color: var(--amber);
-  color: #fff;
+  background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
+}
+
+.btn-teklif {
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
 }
 
 .btn-toptanci {
-  background-color: var(--blue);
-  color: #fff;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
 }
 
-/* Sekmeler */
+/* ==================== MODERN SEGMENTED SEKME BARI ==================== */
 .nav-tabs {
   display: flex;
-  gap: 8px;
-  border-bottom: 2px solid var(--border-color);
+  gap: 6px;
+  background: #ffffff;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
   margin-bottom: 18px;
   overflow-x: auto;
 }
@@ -280,16 +412,15 @@ body {
 .tab-btn {
   background: transparent;
   border: none;
-  padding: 10px 18px;
-  font-size: 0.95rem;
+  padding: 10px 16px;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #475569;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
+  border-radius: 10px;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
@@ -300,12 +431,15 @@ body {
 }
 
 .tab-btn:hover {
-  color: var(--primary);
+  color: #0f172a;
+  background: #f1f5f9;
 }
 
 .tab-btn.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
+  color: #ffffff;
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.28);
+  font-weight: 700;
 }
 
 .tab-badge {
@@ -317,6 +451,11 @@ body {
   font-weight: 700;
 }
 
+.tab-btn.active .tab-badge {
+  background: rgba(255, 255, 255, 0.24) !important;
+  color: #ffffff !important;
+}
+
 /* Tab İçerikleri */
 .tab-content {
   display: none;
@@ -326,13 +465,13 @@ body {
   display: block;
 }
 
-/* Genel Kart Tasarımı */
+/* ==================== KARTLAR, TABLOLAR VE FORMLAR ==================== */
 .card {
   background: var(--card-bg);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-  padding: 20px;
+  border: 1px solid rgba(203, 213, 225, 0.85);
+  box-shadow: 0 6px 18px -4px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  padding: 24px;
 }
 
 .card-header {
@@ -341,16 +480,28 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 14px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .card-header h3 {
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
 }
 
 .text-muted {
   color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.text-xs {
+  font-size: 0.78rem;
+}
+
+.text-sm {
   font-size: 0.85rem;
 }
 
@@ -361,24 +512,29 @@ body {
   flex-wrap: wrap;
 }
 
-select, input[type="text"], input[type="number"], input[type="tel"], textarea {
-  padding: 9px 12px;
-  border: 1px solid var(--border-color);
+select, input[type="text"], input[type="number"], input[type="tel"], input[type="email"], input[type="date"], textarea {
+  padding: 9px 13px;
+  border: 1px solid #cbd5e1;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
+  color: #0f172a;
+  font-weight: 500;
   outline: none;
-  background: #fff;
-  transition: border-color 0.15s;
+  background: #ffffff;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 select:focus, input:focus, textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 /* Tablolar */
 .table-responsive {
   overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
 }
 
 .data-table {
@@ -388,24 +544,30 @@ select:focus, input:focus, textarea:focus {
 }
 
 .data-table th {
-  background: #f1f5f9;
-  padding: 11px 14px;
-  font-size: 0.8rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 13px 16px;
+  font-size: 0.76rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--text-muted);
-  letter-spacing: 0.03em;
-  border-bottom: 1px solid var(--border-color);
+  color: #475569;
+  letter-spacing: 0.045em;
+  border-bottom: 1px solid #cbd5e1;
 }
 
 .data-table td {
-  padding: 12px 14px;
-  font-size: 0.9rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 13px 16px;
+  font-size: 0.92rem;
+  color: #1e293b;
+  border-bottom: 1px solid #eef2f6;
   vertical-align: middle;
+  font-variant-numeric: tabular-nums;
 }
 
-.data-table tr:hover td {
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr:hover td {
   background-color: #f8fafc;
 }
 
@@ -414,11 +576,11 @@ select:focus, input:focus, textarea:focus {
 
 /* Butonlar */
 .btn {
-  padding: 8px 14px;
+  padding: 9px 15px;
   border-radius: var(--radius-sm);
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   font-weight: 600;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -431,40 +593,102 @@ select:focus, input:focus, textarea:focus {
   height: 16px;
 }
 
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover { background: var(--primary-hover); }
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+}
 
-.btn-secondary { background: #e2e8f0; color: var(--text-main); }
-.btn-secondary:hover { background: #cbd5e1; }
+.btn-secondary {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+.btn-secondary:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
 
-.btn-success { background: var(--green); color: #fff; }
-.btn-danger { background: var(--red); color: #fff; }
-.btn-amber { background: var(--amber); color: #fff; }
+.btn-success {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+}
+.btn-success:hover {
+  filter: brightness(1.06);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #fff;
+}
+.btn-amber {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+}
 .btn-danger-outline {
-  background: transparent;
-  border: 1px solid var(--red);
+  background: #fff;
+  border: 1px solid #fca5a5;
   color: var(--red);
 }
 .btn-danger-outline:hover {
   background: var(--red-light);
+  border-color: var(--red);
 }
 
 .btn-sm {
-  padding: 5px 9px;
-  font-size: 0.78rem;
+  padding: 6px 11px;
+  font-size: 0.79rem;
+  border-radius: 7px;
+}
+
+/* İkon Butonları (Düzenle & Sil) */
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-icon i {
+  width: 15px;
+  height: 15px;
+}
+
+.btn-icon:hover {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.btn-icon.delete:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
 }
 
 /* Veresiye Sayfası Grid */
 .grid-veresiye {
   display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 20px;
+  grid-template-columns: 350px 1fr;
+  gap: 22px;
   min-height: 480px;
 }
 
 .musteri-sidebar {
   border-right: 1px solid var(--border-color);
-  padding-right: 16px;
+  padding-right: 18px;
   max-height: 600px;
   overflow-y: auto;
 }
@@ -472,14 +696,14 @@ select:focus, input:focus, textarea:focus {
 .musteri-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 
 .musteri-card {
-  padding: 12px 14px;
+  padding: 13px 15px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  background: #fff;
+  border: 1px solid #e2e8f0;
+  background: #fcfdff;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -488,14 +712,15 @@ select:focus, input:focus, textarea:focus {
 }
 
 .musteri-card:hover {
-  border-color: var(--primary);
-  background-color: #f0f7ff;
+  border-color: #93c5fd;
+  background-color: #f8fbff;
+  transform: translateX(2px);
 }
 
 .musteri-card.active {
   border-color: var(--primary);
-  background-color: #eff6ff;
-  box-shadow: 0 0 0 1px var(--primary);
+  background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
 }
 
 .musteri-card-name {
@@ -505,14 +730,16 @@ select:focus, input:focus, textarea:focus {
 }
 
 .musteri-card-role {
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
+  margin-top: 2px;
 }
 
 .musteri-card-balance {
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   font-weight: 800;
   color: var(--amber);
+  font-variant-numeric: tabular-nums;
 }
 
 .musteri-detail-box {
@@ -528,6 +755,9 @@ select:focus, input:focus, textarea:focus {
   color: var(--text-muted);
   text-align: center;
   padding: 40px;
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  border: 1px dashed #cbd5e1;
 }
 
 .empty-state i {
@@ -546,16 +776,19 @@ select:focus, input:focus, textarea:focus {
 }
 
 .rapor-kutu {
-  background: #f8fafc;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: var(--radius-md);
-  padding: 16px;
-  border: 1px solid var(--border-color);
+  padding: 18px;
+  border: 1px solid #cbd5e1;
+  box-shadow: inset 0 1px 0 #ffffff;
 }
 
 .rapor-kutu h3 {
-  font-size: 1.5rem;
+  font-size: 1.55rem;
   font-weight: 800;
   margin-top: 6px;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
 }
 
 .kategori-progress-list {
@@ -568,10 +801,11 @@ select:focus, input:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: #f1f5f9;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
 }
 
 /* Ayarlar Sayfası */
@@ -584,14 +818,15 @@ select:focus, input:focus, textarea:focus {
 .settings-box {
   background: #f8fafc;
   border-radius: var(--radius-md);
-  padding: 20px;
-  border: 1px solid var(--border-color);
+  padding: 22px;
+  border: 1px solid #cbd5e1;
 }
 
 .settings-box h4 {
   font-size: 1.05rem;
   margin-bottom: 14px;
-  font-weight: 700;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 /* Modallar */
