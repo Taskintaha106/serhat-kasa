@@ -43,6 +43,10 @@
     </div>
 
     <div class="header-right">
+      <div id="userProfileBadge" style="display:none; align-items:center; gap:6px; padding:6px 12px; background:#f1f5f9; border-radius:8px; font-weight:600; font-size:13px; color:#334155; border:1px solid #e2e8f0;">
+        <i data-lucide="store" style="width:16px;height:16px;color:#2563eb;"></i>
+        <span id="headerUsernameText">Dükkan</span>
+      </div>
       <button id="btnMobileInstall" class="btn btn-warning" style="display:none; background:#f59e0b; color:#0f172a; font-weight:700;" onclick="installMobileApp()" title="Uygulamayı telefonunuza yükleyin">
         <i data-lucide="smartphone"></i> Telefona Yükle
       </button>
@@ -54,6 +58,9 @@
       </button>
       <button class="btn btn-primary" onclick="openGunSonuModal()" title="Bugünkü ciroyu ve kasayı kapat">
         <i data-lucide="calendar-check"></i> Gün Sonu Kapat
+      </button>
+      <button id="btnLogout" class="btn btn-secondary" style="display:none; background:#fee2e2; color:#dc2626; border-color:#fca5a5; font-weight:600;" onclick="firebaseDB.logout()" title="Oturumu Kapat">
+        <i data-lucide="log-out"></i> Çıkış
       </button>
     </div>
   </header>
@@ -789,12 +796,274 @@
     </div>
   </div>
 
+  <!-- ==================== DÜKKAN GİRİŞİ & KAYIT MODALI ==================== -->
+  <div id="authModalOverlay" class="auth-overlay" style="display:none;">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo">
+          <i data-lucide="store" style="width:26px;height:26px;"></i>
+        </div>
+        <h2 id="authModalTitle">Nalbur Kasa & Veresiye</h2>
+        <p id="authModalDesc">Dükkan Hesabınıza Giriş Yapın</p>
+      </div>
+
+      <!-- Giriş / Kayıt Sekmeleri -->
+      <div class="auth-tabs" id="authTabsContainer">
+        <button type="button" class="auth-tab-btn active" id="tabBtnLogin" onclick="switchAuthTab('login')">
+          <i data-lucide="log-in" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"></i> Giriş Yap
+        </button>
+        <button type="button" class="auth-tab-btn" id="tabBtnRegister" onclick="switchAuthTab('register')">
+          <i data-lucide="user-plus" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"></i> Yeni Dükkan Kaydı
+        </button>
+      </div>
+
+      <div class="auth-body">
+        <!-- 1. GİRİŞ FORMU -->
+        <form id="formLogin" class="auth-form" onsubmit="handleAuthLogin(event)">
+          <div id="loginAlert" class="auth-alert"></div>
+
+          <div>
+            <label for="loginIdentifier">Kullanıcı Adı veya E-posta</label>
+            <input type="text" id="loginIdentifier" placeholder="Örn: serhatnalbur veya ornek@gmail.com" required autocomplete="username">
+          </div>
+
+          <div>
+            <label for="loginPassword">
+              <span>Şifre</span>
+              <a href="javascript:void(0)" class="auth-forgot-link" onclick="switchAuthTab('forgot')">Şifremi Unuttum?</a>
+            </label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" id="btnLoginSubmit" class="btn-auth btn-primary" style="background:#2563eb; color:#fff; width:100%; margin-top:8px;">
+            <i data-lucide="log-in"></i> Dükkana Giriş Yap
+          </button>
+        </form>
+
+        <!-- 2. KAYIT FORMU -->
+        <form id="formRegister" class="auth-form" style="display:none;" onsubmit="handleAuthRegister(event)">
+          <div id="regAlert" class="auth-alert"></div>
+
+          <div>
+            <label for="regShopName">Dükkan / İşletme Adı</label>
+            <input type="text" id="regShopName" placeholder="Örn: Serhat İnşaat & Nalbur" required>
+          </div>
+
+          <div>
+            <label for="regUsername">Kullanıcı Adı <span style="font-weight:normal;color:#64748b;font-size:11px;">(Giriş için kullanılır)</span></label>
+            <input type="text" id="regUsername" placeholder="Örn: serhatnalbur" required autocomplete="username">
+          </div>
+
+          <div>
+            <label for="regEmail">E-posta Adresi <span style="font-weight:normal;color:#64748b;font-size:11px;">(Şifre sıfırlama için zorunlu)</span></label>
+            <input type="email" id="regEmail" placeholder="Örn: serhat@gmail.com" required autocomplete="email">
+          </div>
+
+          <div>
+            <label for="regPassword">Şifre <span style="font-weight:normal;color:#64748b;font-size:11px;">(En az 6 karakter)</span></label>
+            <input type="password" id="regPassword" placeholder="••••••••" required minlength="6" autocomplete="new-password">
+          </div>
+
+          <div>
+            <label for="regPasswordConfirm">Şifre Tekrar</label>
+            <input type="password" id="regPasswordConfirm" placeholder="••••••••" required minlength="6" autocomplete="new-password">
+          </div>
+
+          <button type="submit" id="btnRegSubmit" class="btn-auth btn-success" style="background:#16a34a; color:#fff; width:100%; margin-top:8px;">
+            <i data-lucide="store"></i> Dükkanımı Kaydet ve Başla
+          </button>
+        </form>
+
+        <!-- 3. ŞİFREMİ UNUTTUM FORMU -->
+        <form id="formForgot" class="auth-form" style="display:none;" onsubmit="handleAuthForgot(event)">
+          <div id="forgotAlert" class="auth-alert"></div>
+
+          <p style="font-size:0.85rem; color:#64748b; line-height:1.5;">
+            Kayıtlı <strong>kullanıcı adınızı</strong> veya <strong>e-posta adresinizi</strong> yazın. Sistem e-posta adresinize şifre sıfırlama linki gönderecektir.
+          </p>
+
+          <div>
+            <label for="forgotIdentifier">Kullanıcı Adı veya E-posta</label>
+            <input type="text" id="forgotIdentifier" placeholder="Örn: serhatnalbur veya ornek@gmail.com" required>
+          </div>
+
+          <button type="submit" id="btnForgotSubmit" class="btn-auth btn-primary" style="background:#2563eb; color:#fff; width:100%; margin-top:8px;">
+            <i data-lucide="mail"></i> Sıfırlama Bağlantısı Gönder
+          </button>
+
+          <button type="button" class="btn-auth btn-secondary" style="background:#f1f5f9; color:#475569; width:100%; border:1px solid #cbd5e1;" onclick="switchAuthTab('login')">
+            <i data-lucide="arrow-left"></i> Giriş Ekranına Geri Dön
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Bildirim Kutusu (Toast) -->
   <div id="toast" class="toast"></div>
 
-  <!-- Firebase CDN -->
+  <!-- Firebase CDN Modülü -->
   <script type="module" src="firebase-init.js"></script>
   <!-- Uygulama Scripti -->
   <script src="app.js" defer></script>
+
+  <!-- Auth UI İşleyicileri -->
+  <script>
+    function switchAuthTab(tab) {
+      const tabBtnLogin = document.getElementById('tabBtnLogin');
+      const tabBtnReg = document.getElementById('tabBtnRegister');
+      const tabsContainer = document.getElementById('authTabsContainer');
+      const formLogin = document.getElementById('formLogin');
+      const formRegister = document.getElementById('formRegister');
+      const formForgot = document.getElementById('formForgot');
+      const title = document.getElementById('authModalTitle');
+      const desc = document.getElementById('authModalDesc');
+
+      ['loginAlert', 'regAlert', 'forgotAlert'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.className = 'auth-alert'; el.style.display = 'none'; el.textContent = ''; }
+      });
+
+      if (tab === 'login') {
+        tabsContainer.style.display = 'flex';
+        tabBtnLogin.classList.add('active');
+        tabBtnReg.classList.remove('active');
+        formLogin.style.display = 'flex';
+        formRegister.style.display = 'none';
+        formForgot.style.display = 'none';
+        title.textContent = 'Nalbur Kasa & Veresiye';
+        desc.textContent = 'Dükkan Hesabınıza Giriş Yapın';
+      } else if (tab === 'register') {
+        tabsContainer.style.display = 'flex';
+        tabBtnReg.classList.add('active');
+        tabBtnLogin.classList.remove('active');
+        formRegister.style.display = 'flex';
+        formLogin.style.display = 'none';
+        formForgot.style.display = 'none';
+        title.textContent = 'Yeni Dükkan Kaydı';
+        desc.textContent = 'Sadece 1 dakikada dükkanınızı buluta taşıyın';
+      } else if (tab === 'forgot') {
+        tabsContainer.style.display = 'none';
+        formLogin.style.display = 'none';
+        formRegister.style.display = 'none';
+        formForgot.style.display = 'flex';
+        title.textContent = 'Şifre Sıfırlama';
+        desc.textContent = 'E-posta adresinize sıfırlama linki gönderin';
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    async function handleAuthLogin(e) {
+      e.preventDefault();
+      const alertEl = document.getElementById('loginAlert');
+      const btn = document.getElementById('btnLoginSubmit');
+      const idVal = document.getElementById('loginIdentifier').value.trim();
+      const passVal = document.getElementById('loginPassword').value;
+
+      alertEl.style.display = 'none';
+      btn.disabled = true;
+      btn.innerHTML = 'Giriş Yapılıyor...';
+
+      try {
+        if (!window.firebaseDB || !window.firebaseDB.login) {
+          throw new Error('Firebase başlatılıyor, lütfen birkaç saniye sonra tekrar deneyin.');
+        }
+        await window.firebaseDB.login(idVal, passVal);
+      } catch (err) {
+        let msg = err.message || 'Giriş yapılamadı';
+        if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+          msg = 'Kullanıcı adı/e-posta veya şifre hatalı!';
+        } else if (err.code === 'auth/configuration-not-found') {
+          msg = 'Firebase Authentication henüz etkinleştirilmemiş! Lütfen Firebase Console -> Authentication bölümünden Email/Password seçeneğini aktif edin.';
+        }
+        alertEl.textContent = '❌ ' + msg;
+        alertEl.className = 'auth-alert error';
+        alertEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="log-in"></i> Dükkana Giriş Yap';
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }
+
+    async function handleAuthRegister(e) {
+      e.preventDefault();
+      const alertEl = document.getElementById('regAlert');
+      const btn = document.getElementById('btnRegSubmit');
+      const shopName = document.getElementById('regShopName').value.trim();
+      const username = document.getElementById('regUsername').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const pass = document.getElementById('regPassword').value;
+      const passConfirm = document.getElementById('regPasswordConfirm').value;
+
+      alertEl.style.display = 'none';
+
+      if (pass !== passConfirm) {
+        alertEl.textContent = '❌ Şifreler birbiriyle uyuşmuyor!';
+        alertEl.className = 'auth-alert error';
+        alertEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = 'Dükkan Oluşturuluyor...';
+
+      try {
+        if (!window.firebaseDB || !window.firebaseDB.register) {
+          throw new Error('Firebase başlatılıyor, lütfen birkaç saniye sonra tekrar deneyin.');
+        }
+        await window.firebaseDB.register(shopName, username, email, pass);
+      } catch (err) {
+        let msg = err.message || 'Kayıt başarısız oldu';
+        if (err.code === 'auth/email-already-in-use') {
+          msg = 'Bu e-posta adresi ile zaten bir dükkan hesabı açılmış!';
+        } else if (err.code === 'auth/weak-password') {
+          msg = 'Şifre çok zayıf. Lütfen en az 6 karakterli bir şifre girin.';
+        } else if (err.code === 'auth/configuration-not-found') {
+          msg = 'Firebase Authentication henüz etkinleştirilmemiş! Lütfen Firebase Console -> Authentication bölümünden Email/Password seçeneğini aktif edin.';
+        }
+        alertEl.textContent = '❌ ' + msg;
+        alertEl.className = 'auth-alert error';
+        alertEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="store"></i> Dükkanımı Kaydet ve Başla';
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }
+
+    async function handleAuthForgot(e) {
+      e.preventDefault();
+      const alertEl = document.getElementById('forgotAlert');
+      const btn = document.getElementById('btnForgotSubmit');
+      const idVal = document.getElementById('forgotIdentifier').value.trim();
+
+      alertEl.style.display = 'none';
+      btn.disabled = true;
+      btn.innerHTML = 'Gönderiliyor...';
+
+      try {
+        if (!window.firebaseDB || !window.firebaseDB.resetPassword) {
+          throw new Error('Firebase henüz hazır değil, lütfen bekleyin.');
+        }
+        const targetEmail = await window.firebaseDB.resetPassword(idVal);
+        alertEl.textContent = `✅ Şifre sıfırlama bağlantısı "${targetEmail}" adresine gönderildi. Lütfen gelen kutunuzu ve spam klasörünü kontrol edin.`;
+        alertEl.className = 'auth-alert success';
+        alertEl.style.display = 'block';
+      } catch (err) {
+        let msg = err.message || 'Sıfırlama bağlantısı gönderilemedi';
+        if (err.code === 'auth/user-not-found') {
+          msg = 'Bu adrese kayıtlı dükkan kullanıcısı bulunamadı.';
+        }
+        alertEl.textContent = '❌ ' + msg;
+        alertEl.className = 'auth-alert error';
+        alertEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="mail"></i> Sıfırlama Bağlantısı Gönder';
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }
+  </script>
 </body>
 </html>

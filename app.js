@@ -64,8 +64,22 @@ function saveData() {
 // Buluttan gelen veriyi uygula (firebase-init.js tarafından çağrılır)
 window.syncFromCloud = function(cloudData) {
   appState = cloudData;
+  if (appState.settings && appState.settings.shopName) {
+    const titleEl = document.getElementById('headerShopTitle');
+    if (titleEl) titleEl.textContent = appState.settings.shopName;
+  }
   renderAll();
 };
+
+window.getAppState = function() {
+  return appState;
+};
+
+window.clearAppState = function() {
+  seedInitialData();
+  renderAll();
+};
+
 
 // Saat ve Tarih Güncelleyici
 function initClock() {
