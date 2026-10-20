@@ -19,7 +19,7 @@
   <!-- Lucide Icons (Offline & Fast) -->
   <script src="lucide.min.js"></script>
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
 
@@ -575,10 +575,13 @@
                 <i data-lucide="file-spreadsheet"></i> Bu Malzemelerle Fiyat Teklifi Hazırla
               </button>
               <button type="button" class="btn btn-success" onclick="sendMetrajWhatsApp()">
-                <i data-lucide="message-circle"></i> Listeyi WhatsApp'a Gönder
+                <i data-lucide="message-circle"></i> WhatsApp'a Gönder
               </button>
               <button type="button" class="btn btn-secondary" onclick="copyMetrajText()">
                 <i data-lucide="copy"></i> Listeyi Kopyala
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="copyMetrajTable()" title="Excel veya E-postaya yapıştırmak için renkli tablo olarak panoya kopyalar">
+                <i data-lucide="table"></i> Tablo Olarak Kopyala
               </button>
             </div>
           </div>
@@ -1146,6 +1149,9 @@
           </button>
         </div>
         <div style="display:flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary" onclick="copyProposalTable()" title="Excel veya E-postaya yapıştırmak için renkli tablo olarak kopyalar">
+            <i data-lucide="clipboard-copy"></i> Tabloyu Kopyala
+          </button>
           <button type="button" class="btn" style="background:#0284c7; color:#fff;" onclick="sendProposalEmail()" title="Müşteriye E-posta ile Gönder">
             <i data-lucide="mail"></i> E-posta Gönder
           </button>
@@ -1322,7 +1328,7 @@
   <!-- Firebase CDN Modülü -->
   <script type="module" src="firebase-init.js?v=15"></script>
   <!-- Uygulama Scripti -->
-  <script src="app.js?v=17" defer></script>
+  <script src="app.js?v=18" defer></script>
 
   <!-- Auth UI İşleyicileri -->
   <script>

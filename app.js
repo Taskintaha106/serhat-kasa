@@ -1729,47 +1729,131 @@ function downloadProposalCSV(customId = null) {
   showToast(`📊 "${fileName}" Excel tablosu olarak indirildi!`);
 }
 
-// 4. Teklif Metni Oluşturucu (E-posta ve WhatsApp için ortak temiz metin)
+// 4. Teklif Metni Oluşturucu (E-posta ve WhatsApp için temiz, anlaşılır liste formatı - saçma karakter yok)
 function buildProposalShareText(prop) {
   const shopName = appState.settings?.shopName || 'Serhat İnşaat';
   const shopPhone = appState.settings?.phone ? ` (${appState.settings.phone})` : '';
   const dateStr = prop.date ? new Date(prop.date).toLocaleDateString('tr-TR') : '';
 
-  let text = `🏗️ *${shopName.toUpperCase()} - FİYAT TEKLİFİ*\n`;
-  text += `━━━━━━━━━━━━━━━━━━━━\n`;
-  text += `📄 *Teklif No:* ${prop.proposalNo}\n`;
-  text += `📅 *Tarih:* ${dateStr} (${prop.validity || '7 Gün Geçerlidir'})\n`;
-  text += `👤 *Sayın:* ${prop.customerName}\n`;
-  if (prop.siteName) text += `📍 *Şantiye / Teslimat:* ${prop.siteName}\n`;
-  text += `━━━━━━━━━━━━━━━━━━━━\n`;
-  text += `📦 *MALZEME LİSTESİ:*\n`;
+  let text = '========================================\n';
+  text += `${shopName.toUpperCase()} - FİYAT TEKLİFİ\n`;
+  text += '========================================\n';
+  text += `Teklif No   : ${prop.proposalNo}\n`;
+  text += `Tarih       : ${dateStr} (${prop.validity || '7 Gün Geçerlidir'})\n`;
+  text += `Sayın       : ${prop.customerName}\n`;
+  if (prop.siteName) {
+    text += `Şantiye/Tes.: ${prop.siteName}\n`;
+  }
+  text += '----------------------------------------\n';
+  text += 'MALZEME LİSTESİ:\n\n';
 
   (prop.items || []).forEach((item, i) => {
     const discStr = item.discount > 0 ? ` (%${item.discount} İsk.)` : '';
-    text += `${i + 1}. *${item.name}*\n`;
-    text += `   ${item.qty} ${item.unit} x ${formatTL(item.unitPrice)}${discStr} = *${formatTL(item.lineTotal)}*\n`;
+    text += `${i + 1}) ${item.name}\n`;
+    text += `   Miktar : ${item.qty} ${item.unit}\n`;
+    text += `   Birim  : ${formatTL(item.unitPrice)}${discStr}\n`;
+    text += `   Tutar  : ${formatTL(item.lineTotal)}\n\n`;
   });
 
-  text += `━━━━━━━━━━━━━━━━━━━━\n`;
+  text += '----------------------------------------\n';
   if (prop.totalDiscount > 0) {
-    text += `Ara Toplam: ${formatTL(prop.subTotal)}\n`;
-    text += `Toplam İskonto: -${formatTL(prop.totalDiscount)}\n`;
+    text += `Ara Toplam   : ${formatTL(prop.subTotal)}\n`;
+    text += `İskonto      : -${formatTL(prop.totalDiscount)}\n`;
   }
   if (prop.taxMode === '20' || prop.taxMode === '10') {
-    text += `KDV (%${prop.taxMode}): ${formatTL(prop.taxAmount)}\n`;
+    text += `KDV (%${prop.taxMode})    : ${formatTL(prop.taxAmount)}\n`;
   }
-  text += `💰 *GENEL TOPLAM: ${formatTL(prop.grandTotal)}*\n`;
-  text += `💳 *Ödeme Koşulu:* ${prop.paymentTerms || 'Peşin'}\n`;
+  text += `GENEL TOPLAM : ${formatTL(prop.grandTotal)}\n`;
+  text += '----------------------------------------\n';
+  text += `Ödeme Koşulu : ${prop.paymentTerms || 'Peşin'}\n`;
   if (prop.notes) {
-    text += `📝 *Not:* ${prop.notes}\n`;
+    text += `Not          : ${prop.notes}\n`;
   }
-  text += `━━━━━━━━━━━━━━━━━━━━\n`;
-  text += `İyi çalışmalar dileriz.\n*${shopName}*${shopPhone}`;
+  text += '========================================\n';
+  text += `İyi çalışmalar dileriz.\n${shopName}${shopPhone}`;
 
   return text;
 }
 
-// 5. E-posta ile Gönder
+// 4b. Zengin HTML Kurumsal Tablo Oluşturucu (Gmail, Outlook veya Word'e yapıştırmak için)
+function buildProposalHTMLTable(prop) {
+  const shopName = appState.settings?.shopName || 'Serhat İnşaat';
+  const shopPhone = appState.settings?.phone ? ` (${appState.settings.phone})` : '';
+  const dateStr = prop.date ? new Date(prop.date).toLocaleDateString('tr-TR') : '';
+
+  let rows = '';
+  (prop.items || []).forEach((item, i) => {
+    const discStr = item.discount > 0 ? ` <span style="color:#d97706; font-size:11px;">(%${item.discount} İsk.)</span>` : '';
+    const bg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+    rows += `
+      <tr style="background:${bg};">
+        <td style="padding:8px 10px; border:1px solid #cbd5e1; text-align:center; color:#64748b;">${i + 1}</td>
+        <td style="padding:8px 10px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">${escapeHtml(item.name)}</td>
+        <td style="padding:8px 10px; border:1px solid #cbd5e1; text-align:right; font-weight:700;">${item.qty} ${escapeHtml(item.unit)}</td>
+        <td style="padding:8px 10px; border:1px solid #cbd5e1; text-align:right;">${formatTL(item.unitPrice)}${discStr}</td>
+        <td style="padding:8px 10px; border:1px solid #cbd5e1; text-align:right; font-weight:700; color:#15803d;">${formatTL(item.lineTotal)}</td>
+      </tr>
+    `;
+  });
+
+  return `
+    <div style="font-family:Arial,Helvetica,sans-serif; max-width:680px; color:#1e293b; font-size:13px; line-height:1.5;">
+      <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; padding:14px 18px; border-radius:8px 8px 0 0;">
+        <h2 style="margin:0; font-size:17px; font-weight:800; letter-spacing:0.5px;">${escapeHtml(shopName.toUpperCase())} &mdash; FİYAT TEKLİFİ</h2>
+        <div style="font-size:12px; color:#94a3b8; margin-top:3px;">
+          Teklif No: <strong>${escapeHtml(prop.proposalNo)}</strong> &bull; Tarih: <strong>${dateStr}</strong> (${escapeHtml(prop.validity || '7 Gün')})
+        </div>
+      </div>
+      <div style="background:#f8fafc; border:1px solid #cbd5e1; border-top:none; padding:10px 18px; font-size:12px;">
+        <div><strong>Sayın:</strong> ${escapeHtml(prop.customerName)}</div>
+        ${prop.siteName ? `<div><strong>Şantiye / Teslimat:</strong> ${escapeHtml(prop.siteName)}</div>` : ''}
+      </div>
+      <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:12.5px;">
+        <thead>
+          <tr style="background:#0f172a; color:#ffffff;">
+            <th style="padding:8px 10px; border:1px solid #0f172a; text-align:center; width:35px;">#</th>
+            <th style="padding:8px 10px; border:1px solid #0f172a; text-align:left;">Malzeme Adı</th>
+            <th style="padding:8px 10px; border:1px solid #0f172a; text-align:right; width:90px;">Miktar</th>
+            <th style="padding:8px 10px; border:1px solid #0f172a; text-align:right; width:95px;">Birim Fiyat</th>
+            <th style="padding:8px 10px; border:1px solid #0f172a; text-align:right; width:110px;">Tutar</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+        <tfoot>
+          ${prop.totalDiscount > 0 ? `
+            <tr>
+              <td colspan="4" style="padding:6px 10px; border:1px solid #cbd5e1; text-align:right; font-weight:600;">Ara Toplam:</td>
+              <td style="padding:6px 10px; border:1px solid #cbd5e1; text-align:right; font-weight:600;">${formatTL(prop.subTotal)}</td>
+            </tr>
+            <tr>
+              <td colspan="4" style="padding:6px 10px; border:1px solid #cbd5e1; text-align:right; font-weight:600; color:#dc2626;">Toplam İskonto:</td>
+              <td style="padding:6px 10px; border:1px solid #cbd5e1; text-align:right; font-weight:600; color:#dc2626;">-${formatTL(prop.totalDiscount)}</td>
+            </tr>
+          ` : ''}
+          ${(prop.taxMode === '20' || prop.taxMode === '10') ? `
+            <tr>
+              <td colspan="4" style="padding:6px 10px; border:1px solid #cbd5e1; text-align:right; font-weight:600;">KDV (%${prop.taxMode}):</td>
+              <td style="padding:6px 10px; border:1px solid #cbd5e1; text-align:right; font-weight:600;">${formatTL(prop.taxAmount)}</td>
+            </tr>
+          ` : ''}
+          <tr style="background:#f0fdf4;">
+            <td colspan="4" style="padding:10px; border:2px solid #16a34a; text-align:right; font-weight:800; font-size:14px; color:#15803d;">GENEL TOPLAM:</td>
+            <td style="padding:10px; border:2px solid #16a34a; text-align:right; font-weight:800; font-size:15px; color:#15803d;">${formatTL(prop.grandTotal)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <div style="margin-top:10px; padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; font-size:12px;">
+        <div><strong>Ödeme Koşulu:</strong> ${escapeHtml(prop.paymentTerms || 'Peşin')}</div>
+        ${prop.notes ? `<div><strong>Not:</strong> ${escapeHtml(prop.notes)}</div>` : ''}
+        <div style="margin-top:6px; color:#64748b; font-size:11px;">${escapeHtml(shopName)}${escapeHtml(shopPhone)} &bull; İyi çalışmalar dileriz.</div>
+      </div>
+    </div>
+  `;
+}
+
+// 5. E-posta ile Gönder (Temiz metin + Panoya Renkli Kurumsal Tablo Kopyalama)
 function sendProposalEmail(customId = null) {
   const id = customId || activeViewingProposalId;
   const prop = (appState.proposals || []).find(p => p.id === id);
@@ -1788,19 +1872,18 @@ function sendProposalEmail(customId = null) {
 
   const shopName = appState.settings?.shopName || 'Serhat İnşaat';
   const subject = `${shopName} - Fiyat Teklifi (${prop.proposalNo} - ${prop.customerName})`;
-  const bodyText = buildProposalShareText(prop).replace(/\*/g, '');
+  const plainText = buildProposalShareText(prop);
+  const htmlTable = buildProposalHTMLTable(prop);
 
-  // Panoya da kopyala (Gmail web vb. kullananlar için kolaylık)
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(bodyText).catch(() => {});
-  }
+  // Panoya hem zengin HTML hem düz metin olarak kopyala (Gmail / Outlook / Word'e yapıştırınca renkli tablo çıkar)
+  copyRichTextToClipboard(htmlTable, plainText);
 
-  const mailtoUrl = `mailto:${encodeURIComponent(targetEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+  const mailtoUrl = `mailto:${encodeURIComponent(targetEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plainText)}`;
   window.location.href = mailtoUrl;
-  showToast('📧 E-posta uygulamanız açılıyor... (Teklif metni ayrıca panoya kopyalandı)');
+  showToast('📧 E-posta programınız açıldı. Renkli kurumsal tablo panoya kopyalandı; mailin içine Ctrl+V ile yapıştırabilirsiniz!');
 }
 
-// 6. WhatsApp ile Gönder
+// 6. WhatsApp ile Gönder (Temiz, okunaklı liste formatı)
 function sendProposalWhatsApp(customId = null) {
   const id = customId || activeViewingProposalId;
   const prop = (appState.proposals || []).find(p => p.id === id);
@@ -1810,20 +1893,32 @@ function sendProposalWhatsApp(customId = null) {
   if (rawPhone.startsWith('0')) rawPhone = '90' + rawPhone.slice(1);
   else if (rawPhone.length === 10 && rawPhone.startsWith('5')) rawPhone = '90' + rawPhone;
 
-  const text = buildProposalShareText(prop);
+  const plainText = buildProposalShareText(prop);
+  const htmlTable = buildProposalHTMLTable(prop);
 
-  // Panoya kopyala
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).catch(() => {});
-  }
+  // Panoya da kopyala
+  copyRichTextToClipboard(htmlTable, plainText);
 
   const waUrl = rawPhone
-    ? `https://wa.me/${rawPhone}?text=${encodeURIComponent(text)}`
-    : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    ? `https://wa.me/${rawPhone}?text=${encodeURIComponent(plainText)}`
+    : `https://wa.me/?text=${encodeURIComponent(plainText)}`;
 
   window.open(waUrl, '_blank');
-  showToast('💬 WhatsApp açılıyor... (Teklif metni panoya da kopyalandı)');
+  showToast('💬 WhatsApp açılıyor... Teklif metni panoya da kopyalandı.');
 }
+
+// 6b. Teklifi Tablo Olarak Panoya Kopyala (Excel, Word veya E-posta için)
+function copyProposalTable(customId = null) {
+  const id = customId || activeViewingProposalId;
+  const prop = (appState.proposals || []).find(p => p.id === id);
+  if (!prop) return;
+
+  const plainText = buildProposalShareText(prop);
+  const htmlTable = buildProposalHTMLTable(prop);
+  copyRichTextToClipboard(htmlTable, plainText);
+  showToast('📋 Teklif tablosu kopyalandı! Excel, Word veya E-postanıza (Ctrl+V) yapıştırabilirsiniz.');
+}
+
 
 // 7. Teklifi Satışa / Veresiyeye Dönüştür
 function openProposalConvertModal(id) {
@@ -2643,40 +2738,122 @@ function transferMetrajToProposal() {
   showToast('⚡ Hesaplanan tüm malzemeler Teklif Formuna aktarıldı! Birim fiyatları kontrol edip kaydedebilirsiniz.');
 }
 
+// ==================== METRAJ PAYLAŞIM VE TABLO FONKSİYONLARI ====================
+
 function buildMetrajShareText() {
   const shopName = appState.settings?.shopName || 'Serhat İnşaat';
-  let text = `📐 *${shopName.toUpperCase()} - MALZEME SARFİYAT LİSTESİ*\n`;
-  text += `━━━━━━━━━━━━━━━━━━━━\n`;
-  text += `📌 *İşlem:* ${currentMetrajCalculated.title.replace(/^[^\s]+\s/, '')}\n`;
-  text += `📏 *Ölçü / Alan:* ${currentMetrajCalculated.areaText}\n`;
-  text += `━━━━━━━━━━━━━━━━━━━━\n`;
-  text += `📦 *GEREKEN MALZEMELER:*\n`;
+  const cleanTitle = (currentMetrajCalculated.title || 'Malzeme Hesabı').replace(/^[^\s\w]+/, '').trim();
+
+  let text = '========================================\n';
+  text += `${shopName.toUpperCase()} - MALZEME SARFİYAT LİSTESİ\n`;
+  text += '========================================\n';
+  text += `Uygulama : ${cleanTitle}\n`;
+  text += `Ölçü     : ${currentMetrajCalculated.areaText}\n`;
+  text += '----------------------------------------\n';
+  text += 'GEREKEN MALZEMELER:\n\n';
 
   (currentMetrajCalculated.items || []).forEach((it, idx) => {
-    text += `${idx + 1}. *${it.name}:* ${it.qty} ${it.unit}`;
-    if (it.subInfo) text += ` _(${it.subInfo})_`;
-    text += `\n`;
+    text += `${idx + 1}) ${it.name}\n`;
+    text += `   Miktar  : ${it.qty} ${it.unit}`;
+    if (it.subInfo) text += ` (${it.subInfo})`;
+    text += '\n';
+    if (it.packBadge) {
+      const cleanBadge = it.packBadge.replace(/^[^\s\w]+/, '').trim();
+      text += `   Paket   : ${cleanBadge}\n`;
+    }
+    text += '\n';
   });
 
-  text += `━━━━━━━━━━━━━━━━━━━━\n`;
-  text += `*${shopName}*`;
+  text += '----------------------------------------\n';
+  text += `Hazırlayan: ${shopName}\n`;
+  text += '========================================';
   return text;
+}
+
+function buildMetrajHTMLTable() {
+  const shopName = appState.settings?.shopName || 'Serhat İnşaat';
+  const cleanTitle = (currentMetrajCalculated.title || 'Malzeme Hesabı').replace(/^[^\s\w]+/, '').trim();
+
+  let rows = '';
+  (currentMetrajCalculated.items || []).forEach((it, idx) => {
+    const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+    rows += `
+      <tr style="background:${bg};">
+        <td style="padding:8px 10px; border:1px solid #cbd5e1; text-align:center; color:#64748b;">${idx + 1}</td>
+        <td style="padding:8px 10px; border:1px solid #cbd5e1; font-weight:700; color:#0f172a;">
+          ${escapeHtml(it.name)}
+          ${it.desc ? `<div style="font-size:11px; font-weight:normal; color:#64748b; margin-top:2px;">${escapeHtml(it.desc)}</div>` : ''}
+        </td>
+        <td style="padding:8px 10px; border:1px solid #cbd5e1; text-align:right; font-weight:800; color:#15803d; white-space:nowrap;">
+          ${it.qty} ${escapeHtml(it.unit)}
+          ${it.subInfo ? `<div style="font-size:11px; font-weight:600; color:#166534;">${escapeHtml(it.subInfo)}</div>` : ''}
+        </td>
+        <td style="padding:8px 10px; border:1px solid #cbd5e1; font-size:12px; color:#334155;">
+          ${it.packBadge ? escapeHtml(it.packBadge.replace(/^[^\s\w]+/, '').trim()) : '-'}
+        </td>
+      </tr>
+    `;
+  });
+
+  return `
+    <div style="font-family:Arial,Helvetica,sans-serif; max-width:680px; color:#1e293b; font-size:13px; line-height:1.5;">
+      <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; padding:12px 16px; border-radius:8px 8px 0 0;">
+        <h3 style="margin:0; font-size:16px; font-weight:800;">${escapeHtml(shopName.toUpperCase())} &mdash; MALZEME SARFİYAT HESABI</h3>
+        <div style="font-size:12px; color:#94a3b8; margin-top:3px;">
+          ${escapeHtml(cleanTitle)} &bull; <strong>${escapeHtml(currentMetrajCalculated.areaText)}</strong>
+        </div>
+      </div>
+      <table style="width:100%; border-collapse:collapse; margin-top:8px; font-size:12.5px;">
+        <thead>
+          <tr style="background:#0f172a; color:#ffffff;">
+            <th style="padding:8px 10px; border:1px solid #0f172a; text-align:center; width:35px;">#</th>
+            <th style="padding:8px 10px; border:1px solid #0f172a; text-align:left;">Malzeme Adı</th>
+            <th style="padding:8px 10px; border:1px solid #0f172a; text-align:right; width:130px;">Gereken Miktar</th>
+            <th style="padding:8px 10px; border:1px solid #0f172a; text-align:left;">Paket / Usta Notu</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+      <div style="margin-top:8px; font-size:11.5px; color:#64748b; text-align:right;">
+        ${escapeHtml(shopName)} &bull; Otomatik Metraj ve Sarfiyat Hesaplayıcı
+      </div>
+    </div>
+  `;
+}
+
+// Genel Zengin Metin (HTML Tablo + Düz Metin) Kopyalama Yardımcısı
+function copyRichTextToClipboard(htmlContent, plainTextContent) {
+  if (navigator.clipboard && window.ClipboardItem) {
+    const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+    const blobText = new Blob([plainTextContent], { type: 'text/plain' });
+    navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': blobHtml,
+        'text/plain': blobText
+      })
+    ]).catch(() => {
+      navigator.clipboard.writeText(plainTextContent).catch(() => {});
+    });
+  } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(plainTextContent).catch(() => {});
+  }
 }
 
 function sendMetrajWhatsApp() {
   const text = buildMetrajShareText();
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).catch(() => {});
-  }
+  const html = buildMetrajHTMLTable();
+  copyRichTextToClipboard(html, text);
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  showToast('💬 Malzeme listesi WhatsApp için hazırlandı!');
+  showToast('💬 Malzeme listesi WhatsApp için hazırlandı! (Ayrıca panoya kopyalandı)');
 }
 
 function copyMetrajText() {
-  const text = buildMetrajShareText().replace(/\*/g, '').replace(/_/g, '');
+  const text = buildMetrajShareText();
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => {
-      showToast('📋 Malzeme listesi panoya kopyalandı!');
+      showToast('📋 Malzeme listesi temiz yazı olarak kopyalandı!');
     }).catch(() => {
       alert(text);
     });
@@ -2684,6 +2861,14 @@ function copyMetrajText() {
     alert(text);
   }
 }
+
+function copyMetrajTable() {
+  const text = buildMetrajShareText();
+  const html = buildMetrajHTMLTable();
+  copyRichTextToClipboard(html, text);
+  showToast('📊 Malzeme tablosu kopyalandı! Excel, Word veya E-postanıza (Ctrl+V) yapıştırabilirsiniz.');
+}
+
 
 // ==================== AYARLAR & UYGULAMA İÇİ YEDEKLEME ====================
 
