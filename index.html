@@ -19,7 +19,7 @@
   <!-- Lucide Icons (Offline & Fast) -->
   <script src="lucide.min.js"></script>
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 
@@ -135,6 +135,9 @@
       <button class="btn btn-action btn-veresiye" onclick="openModal('veresiyeModal')">
         <i data-lucide="user-plus"></i> Usta / Veresiye Kaydı
       </button>
+      <button class="btn btn-action" style="background-color: var(--purple); color: #fff;" onclick="openProposalModal()">
+        <i data-lucide="file-spreadsheet"></i> + Fiyat Teklifi Hazırla
+      </button>
       <button class="btn btn-action btn-toptanci" onclick="openModal('toptanciModal')">
         <i data-lucide="receipt"></i> Toptancı / Mal Alımı
       </button>
@@ -151,6 +154,10 @@
       <button class="tab-btn" data-tab="tab-veresiye">
         <i data-lucide="users"></i> Veresiye Defteri
         <span id="badgeVeresiyeCount" class="tab-badge">0</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-teklif">
+        <i data-lucide="file-spreadsheet"></i> Teklifler & Fiyatlandırma
+        <span id="badgeTeklifCount" class="tab-badge" style="background:#2563eb; display:none;">0</span>
       </button>
       <button class="tab-btn" data-tab="tab-toptanci">
         <i data-lucide="factory"></i> Toptancı & Tedarikçiler
@@ -423,6 +430,68 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKME 7: Teklifler & Fiyatlandırma -->
+    <section id="tab-teklif" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Müşteri Teklifleri & Malzeme Fiyatlandırma</h3>
+            <p class="text-muted">Müşteri ve şantiyelere özel fiyat teklifi hazırlayın, dosya/e-posta/WhatsApp ile gönderin ve tek tıkla satışa dönüştürün</p>
+          </div>
+          <div class="filter-group">
+            <input type="text" id="searchTeklifInput" placeholder="Müşteri, şantiye, teklif no veya malzeme ara..." onkeyup="renderTeklifTable()">
+            <select id="filterTeklifDurum" onchange="renderTeklifTable()">
+              <option value="all">Tüm Durumlar</option>
+              <option value="pending">⏳ Beklemede</option>
+              <option value="approved">✅ Onaylandı / Satışa Döndü</option>
+              <option value="rejected">❌ Reddedildi / İptal</option>
+            </select>
+            <button class="btn btn-primary" onclick="openProposalModal()">
+              <i data-lucide="file-plus-2"></i> + Yeni Teklif Hazırla
+            </button>
+          </div>
+        </div>
+
+        <!-- Teklif İstatistik Özeti -->
+        <div class="rapor-ozet-grid" style="margin-bottom: 18px;">
+          <div class="rapor-kutu">
+            <span class="text-muted">Toplam Hazırlanan Teklif</span>
+            <h3 id="teklifOzetToplamTutar" class="text-blue">₺0,00</h3>
+            <span id="teklifOzetToplamCount" class="text-xs text-muted">0 adet teklif</span>
+          </div>
+          <div class="rapor-kutu">
+            <span class="text-muted">Onay Bekleyen Teklifler</span>
+            <h3 id="teklifOzetBekleyenTutar" class="text-amber">₺0,00</h3>
+            <span id="teklifOzetBekleyenCount" class="text-xs text-muted">0 adet beklemede</span>
+          </div>
+          <div class="rapor-kutu">
+            <span class="text-muted">Onaylanan / Satışa Dönen</span>
+            <h3 id="teklifOzetOnaylananTutar" class="text-green">₺0,00</h3>
+            <span id="teklifOzetOnaylananCount" class="text-xs text-muted">0 adet onaylandı</span>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Teklif No & Tarih</th>
+                <th>Müşteri / Firma</th>
+                <th>Şantiye & Teslimat</th>
+                <th>Malzeme Özeti</th>
+                <th>Genel Toplam</th>
+                <th>Durum</th>
+                <th class="text-center">İşlemler & Gönder</th>
+              </tr>
+            </thead>
+            <tbody id="teklifTableBody">
+              <!-- JS ile doldurulacak -->
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -796,6 +865,250 @@
     </div>
   </div>
 
+  <!-- Otomatik Tamamlama Veri Listeleri (Müşteri ve Fiyat Rehberi) -->
+  <datalist id="customerDatalist"></datalist>
+  <datalist id="priceListDatalist"></datalist>
+
+  <!-- Modal 10: Yeni Teklif Hazırla / Düzenle -->
+  <div id="proposalModal" class="modal-overlay">
+    <div class="modal-card modal-xl">
+      <div class="modal-header">
+        <h3 class="text-blue" id="proposalModalTitle"><i data-lucide="file-spreadsheet"></i> Yeni Fiyat Teklifi Hazırla</h3>
+        <button class="modal-close" onclick="closeModal('proposalModal')">&times;</button>
+      </div>
+      <form onsubmit="handleProposalSubmit(event)">
+        <input type="hidden" id="propEditId">
+
+        <!-- Müşteri ve Şantiye Bilgileri -->
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+          <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px;">
+            1. Müşteri & Şantiye Bilgileri
+          </h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Müşteri / Usta / Firma Adı *</label>
+              <input type="text" id="propCustomerName" list="customerDatalist" required placeholder="Örn: Ahmet Usta veya Yıldız İnşaat" oninput="onProposalCustomerInput(this.value)">
+            </div>
+            <div class="form-group">
+              <label>Telefon Numarası (WhatsApp için)</label>
+              <input type="tel" id="propCustomerPhone" placeholder="0532 000 00 00">
+            </div>
+            <div class="form-group">
+              <label>E-posta Adresi (E-posta gönderimi için)</label>
+              <input type="email" id="propCustomerEmail" placeholder="musteri@firma.com">
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom: 0;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Şantiye / Teslimat Adresi</label>
+              <input type="text" id="propSiteName" placeholder="Örn: Kuzeytepe Villa Şantiyesi / Merkez">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Teklif Tarihi *</label>
+              <input type="date" id="propDate" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Teklif Geçerlilik Süresi</label>
+              <select id="propValidity">
+                <option value="Günlük Fiyat (Aynı Gün Geçerlidir)">Günlük Fiyat (Aynı Gün)</option>
+                <option value="3 Gün Geçerlidir">3 Gün Geçerlidir</option>
+                <option value="7 Gün Geçerlidir" selected>7 Gün Geçerlidir</option>
+                <option value="15 Gün Geçerlidir">15 Gün Geçerlidir</option>
+                <option value="30 Gün Geçerlidir">30 Gün Geçerlidir</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Malzeme Kalemleri ve Fiyatlandırma -->
+        <div style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+            <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin: 0;">
+              2. Teklif Malzeme Kalemleri & Fiyatlandırma <span style="font-weight:normal; text-transform:none;">(Fiyat rehberindeki ürünler otomatik dolar)</span>
+            </h4>
+            <button type="button" class="btn btn-sm btn-primary" onclick="addProposalRow()">
+              <i data-lucide="plus"></i> + Malzeme Satırı Ekle
+            </button>
+          </div>
+
+          <div class="teklif-row-header">
+            <div>Malzeme / Ürün Açıklaması</div>
+            <div>Miktar</div>
+            <div>Birim</div>
+            <div>Birim Fiyat (₺)</div>
+            <div>İskonto %</div>
+            <div>Satır Toplamı</div>
+            <div class="text-center">Sil</div>
+          </div>
+
+          <div id="propRowsContainer" style="max-height: 290px; overflow-y: auto; padding-right: 4px;">
+            <!-- JS ile satırlar eklenecek -->
+          </div>
+        </div>
+
+        <!-- Alt Koşullar ve Toplam Hesaplama -->
+        <div class="proposal-totals-section" style="margin-bottom: 12px;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+            <div class="form-row" style="margin-bottom: 0;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Ödeme & Teslimat Koşulu</label>
+                <select id="propPaymentTerms">
+                  <option value="Peşin / Nakit Ödeme">💵 Peşin / Nakit Ödeme</option>
+                  <option value="Kredi Kartı (POS)">💳 Kredi Kartı (POS)</option>
+                  <option value="Malzeme Tesliminde Nakit / Havale">🚚 Malzeme Tesliminde Nakit / Havale</option>
+                  <option value="%50 Siparişte Peşin, %50 Teslimatta">⚖️ %50 Siparişte Peşin, %50 Teslimatta</option>
+                  <option value="Açık Hesap (Cari / Veresiye)">📒 Açık Hesap (Cari / Veresiye)</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>KDV Durumu</label>
+                <select id="propTaxRate" onchange="calculateProposalTotals()">
+                  <option value="0">KDV Hariç (%0)</option>
+                  <option value="20" selected>+ %20 KDV Ekle</option>
+                  <option value="10">+ %10 KDV Ekle</option>
+                  <option value="included">Fiyatlara KDV Dahildir</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Teklif Notları ve Teslimat Şartları</label>
+              <textarea id="propNotes" rows="3" placeholder="Örn: Fiyatlarımız stoklarla sınırlıdır. Nakliye şantiye teslimi tarafımıza aittir, indirme müşteriye aittir.">Fiyatlarımız stoklarla sınırlıdır. Sevkiyat ve teslimat programı için lütfen sipariş onayı veriniz.</textarea>
+            </div>
+          </div>
+
+          <div class="proposal-totals-box" style="width: 320px;">
+            <div class="proposal-total-row">
+              <span>Ara Toplam:</span>
+              <strong id="propSubTotalText">₺0,00</strong>
+            </div>
+            <div class="proposal-total-row">
+              <span>Satır İskontosu:</span>
+              <strong id="propDiscountTotalText" class="text-red">-₺0,00</strong>
+            </div>
+            <div class="proposal-total-row" style="align-items: center;">
+              <span>Ekstra İndirim (₺):</span>
+              <input type="number" step="0.01" min="0" id="propExtraDiscount" value="0" style="width: 100px; padding: 4px 8px; text-align: right; font-weight: 600;" oninput="calculateProposalTotals()">
+            </div>
+            <div class="proposal-total-row">
+              <span>KDV Tutarı:</span>
+              <strong id="propTaxTotalText">₺0,00</strong>
+            </div>
+            <div class="proposal-total-row grand-total">
+              <span>GENEL TOPLAM:</span>
+              <span id="propGrandTotalText">₺0,00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('proposalModal')">Vazgeç</button>
+          <button type="submit" class="btn btn-primary"><i data-lucide="check-circle"></i> Teklifi Kaydet & Önizle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 11: Teklif Belgesi Önizleme, Yazdırma, Dosya İndirme ve Müşteriye Gönderme -->
+  <div id="proposalViewModal" class="modal-overlay">
+    <div class="modal-card modal-xl">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap: 12px; flex-wrap: wrap;">
+          <h3 class="text-blue" style="margin:0;"><i data-lucide="file-check-2"></i> Teklif Belgesi & Gönderim</h3>
+          <span id="viewPropStatusBadge" class="badge-status-pending">⏳ Beklemede</span>
+        </div>
+        <button class="modal-close" onclick="closeModal('proposalViewModal')">&times;</button>
+      </div>
+
+      <!-- Hızlı Durum ve Aksiyon Çubuğu (Yazdırırken gizlenir) -->
+      <div class="filter-group" style="justify-content: space-between; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+        <div style="display:flex; align-items:center; gap: 8px; flex-wrap: wrap;">
+          <span class="text-xs font-semibold text-muted">Teklif Durumu:</span>
+          <button type="button" class="btn btn-sm btn-secondary" onclick="setViewingProposalStatus('pending')">⏳ Beklemede</button>
+          <button type="button" class="btn btn-sm btn-secondary" onclick="setViewingProposalStatus('approved')">✅ Onaylandı</button>
+          <button type="button" class="btn btn-sm btn-danger-outline" onclick="setViewingProposalStatus('rejected')">❌ Reddedildi</button>
+        </div>
+        <div style="display:flex; align-items:center; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-sm btn-secondary" onclick="editViewingProposal()">
+            <i data-lucide="pencil"></i> Teklifi Düzenle
+          </button>
+          <button type="button" id="btnConvertViewingProposal" class="btn btn-sm btn-success" onclick="openConvertFromViewingProposal()">
+            <i data-lucide="zap"></i> Satışa / Veresiyeye Dönüştür
+          </button>
+        </div>
+      </div>
+
+      <!-- Kurumsal A4 Teklif Kağıdı -->
+      <div id="proposalPaperArea" class="proposal-paper">
+        <!-- JS ile dinamik doldurulacak -->
+      </div>
+
+      <!-- Müşteriye Gönderme ve Dosya Olarak İndirme Butonları -->
+      <div class="modal-footer" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display:flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-primary" onclick="printProposalDoc()" title="A4 Kağıda Yazdır veya PDF Olarak Kaydet">
+            <i data-lucide="printer"></i> PDF Kaydet / Yazdır
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="downloadProposalFile()" title="Müşteriye dosya olarak göndermek için bağımsız Teklif Dosyası (.html) indir">
+            <i data-lucide="download"></i> Teklif Dosyası İndir (.html)
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="downloadProposalCSV()" title="Excel tablosu olarak indir (.csv)">
+            <i data-lucide="table"></i> Excel (.csv) İndir
+          </button>
+        </div>
+        <div style="display:flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn" style="background:#0284c7; color:#fff;" onclick="sendProposalEmail()" title="Müşteriye E-posta ile Gönder">
+            <i data-lucide="mail"></i> E-posta Gönder
+          </button>
+          <button type="button" class="btn" style="background:#16a34a; color:#fff;" onclick="sendProposalWhatsApp()" title="Müşteriye WhatsApp'tan Gönder">
+            <i data-lucide="message-circle"></i> WhatsApp'tan Gönder
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('proposalViewModal')">Kapat</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 12: Teklifi Satışa veya Veresiyeye Dönüştür -->
+  <div id="proposalConvertModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="text-green"><i data-lucide="zap"></i> Teklifi Onayla ve Satışa Dönüştür</h3>
+        <button class="modal-close" onclick="closeModal('proposalConvertModal')">&times;</button>
+      </div>
+      <form onsubmit="handleProposalConvertSubmit(event)">
+        <input type="hidden" id="convertPropId">
+        <div id="convertPropSummaryBox" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
+          <!-- JS ile doldurulacak -->
+        </div>
+
+        <div class="form-group">
+          <label>Satış / Tahsilat Yöntemi Seçin *</label>
+          <select id="convertMethod" required onchange="onConvertMethodChange()">
+            <option value="veresiye">📒 Veresiye Defterine Borç Olarak İşle (Müşteri Cari Hesabı)</option>
+            <option value="nakit">💵 Nakit Satış (Çekmece Kasasına Gelir İşle)</option>
+            <option value="kart">💳 Kredi Kartı / POS (Banka Kasasına Gelir İşle)</option>
+            <option value="havale">🏦 Banka Havalesi / EFT (Banka Kasasına Gelir İşle)</option>
+          </select>
+        </div>
+
+        <div id="convertVeresiyeGroup" class="form-group" style="background:#fffbeb; border:1px solid #fde68a; padding:12px; border-radius:8px;">
+          <label>Veresiye Müşteri Hesabı</label>
+          <select id="convertCustomerId">
+            <!-- JS ile mevcut müşteriler veya "Yeni Müşteri Hesabı Aç" seçeneği eklenecek -->
+          </select>
+          <small class="text-muted" style="display:block; margin-top:6px;">
+            Teklifteki tüm malzeme kalemleri ve genel toplam seçilen müşterinin veresiye hesabına detaylı olarak eklenecektir.
+          </small>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('proposalConvertModal')">Vazgeç</button>
+          <button type="submit" class="btn btn-success"><i data-lucide="check-circle-2"></i> Onayla ve Hesaba İşle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ==================== DÜKKAN GİRİŞİ & KAYIT MODALI ==================== -->
   <div id="authModalOverlay" class="auth-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15, 23, 42, 0.94); z-index:999999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
     <div class="auth-card" style="background:#ffffff; width:100%; max-width:460px; border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.45); overflow:hidden;">
@@ -905,7 +1218,7 @@
   <!-- Firebase CDN Modülü -->
   <script type="module" src="firebase-init.js"></script>
   <!-- Uygulama Scripti -->
-  <script src="app.js" defer></script>
+  <script src="app.js?v=12" defer></script>
 
   <!-- Auth UI İşleyicileri -->
   <script>
