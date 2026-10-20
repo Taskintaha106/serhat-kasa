@@ -19,7 +19,7 @@
   <!-- Lucide Icons (Offline & Fast) -->
   <script src="lucide.min.js"></script>
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
 
@@ -158,6 +158,9 @@
       <button class="tab-btn" data-tab="tab-teklif">
         <i data-lucide="file-spreadsheet"></i> Teklifler & Fiyatlandırma
         <span id="badgeTeklifCount" class="tab-badge" style="background:#2563eb; display:none;">0</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-metraj">
+        <i data-lucide="calculator"></i> Ne Kadar Gider? (Metraj)
       </button>
       <button class="tab-btn" data-tab="tab-toptanci">
         <i data-lucide="factory"></i> Toptancı & Tedarikçiler
@@ -492,6 +495,89 @@
               <!-- JS ile doldurulacak -->
             </tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKME 8: Ne Kadar Malzeme Gider? (Metraj & Sarfiyat Hesaplayıcı) -->
+    <section id="tab-metraj" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>📐 Ne Kadar Malzeme Gider? (Usta & Müşteri Metraj Hesaplayıcı)</h3>
+            <p class="text-muted">Oda veya şantiye ölçüsünü girin; 60x60 PVC asma tavan, alçıpan, boya, seramik, sıva ve mantolama için gereken tüm malzemeleri anında hesaplayıp teklife dönüştürün</p>
+          </div>
+        </div>
+
+        <!-- Hesaplayıcı Kategori Seçici Butonlar -->
+        <div class="metraj-cat-grid" id="metrajCategoryBar">
+          <button type="button" class="metraj-cat-btn active" data-calc="pvc_tavan" onclick="selectMetrajCalc('pvc_tavan')">
+            <i data-lucide="layout-grid"></i>
+            <span>60x60 PVC / Karolam Asma Tavan</span>
+          </button>
+          <button type="button" class="metraj-cat-btn" data-calc="alcipan" onclick="selectMetrajCalc('alcipan')">
+            <i data-lucide="layers"></i>
+            <span>Alçıpan Duvar & Düz Tavan</span>
+          </button>
+          <button type="button" class="metraj-cat-btn" data-calc="boya" onclick="selectMetrajCalc('boya')">
+            <i data-lucide="paint-bucket"></i>
+            <span>Boya & Astar Hesabı</span>
+          </button>
+          <button type="button" class="metraj-cat-btn" data-calc="seramik" onclick="selectMetrajCalc('seramik')">
+            <i data-lucide="grid"></i>
+            <span>Seramik, Kalekim & Derz</span>
+          </button>
+          <button type="button" class="metraj-cat-btn" data-calc="siva_alci" onclick="selectMetrajCalc('siva_alci')">
+            <i data-lucide="hammer"></i>
+            <span>Alçı, Sıva & Şap Harcı</span>
+          </button>
+          <button type="button" class="metraj-cat-btn" data-calc="duvar_orme" onclick="selectMetrajCalc('duvar_orme')">
+            <i data-lucide="Cuboid" style="display:none;"></i><i data-lucide="box"></i>
+            <span>Tuğla, Gazbeton & Harç</span>
+          </button>
+          <button type="button" class="metraj-cat-btn" data-calc="mantolama" onclick="selectMetrajCalc('mantolama')">
+            <i data-lucide="home"></i>
+            <span>Dış Cephe Mantolama</span>
+          </button>
+        </div>
+
+        <!-- Hesaplama Giriş ve Sonuç Alanı -->
+        <div class="metraj-workspace">
+          <!-- Sol: Ölçü ve Parametre Girişi -->
+          <div class="metraj-input-panel" id="metrajInputContainer">
+            <!-- JS ile seçilen kategoriye göre dinamik doldurulacak -->
+          </div>
+
+          <!-- Sağ: Hesaplanan Malzeme Reçetesi ve Aksiyonlar -->
+          <div class="metraj-result-panel">
+            <div class="metraj-result-header">
+              <div>
+                <h4 id="metrajResultTitle">📋 Gereken Malzeme Listesi & Sarfiyat</h4>
+                <span id="metrajResultSubtitle" class="text-xs text-muted">Ölçü değiştikçe miktarlar otomatik güncellenir</span>
+              </div>
+              <span id="metrajAreaBadge" class="badge-status-approved" style="font-size:0.85rem;">0 m²</span>
+            </div>
+
+            <div id="metrajItemsList" class="metraj-items-list">
+              <!-- JS ile doldurulacak -->
+            </div>
+
+            <div id="metrajTipBox" class="metraj-tip-box">
+              <!-- Usta tavsiyesi / teknik bilgi -->
+            </div>
+
+            <div class="metraj-actions-bar">
+              <button type="button" class="btn btn-primary" onclick="transferMetrajToProposal()">
+                <i data-lucide="file-spreadsheet"></i> Bu Malzemelerle Fiyat Teklifi Hazırla
+              </button>
+              <button type="button" class="btn btn-success" onclick="sendMetrajWhatsApp()">
+                <i data-lucide="message-circle"></i> Listeyi WhatsApp'a Gönder
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="copyMetrajText()">
+                <i data-lucide="copy"></i> Listeyi Kopyala
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1232,7 +1318,7 @@
   <!-- Firebase CDN Modülü -->
   <script type="module" src="firebase-init.js?v=15"></script>
   <!-- Uygulama Scripti -->
-  <script src="app.js?v=15" defer></script>
+  <script src="app.js?v=16" defer></script>
 
   <!-- Auth UI İşleyicileri -->
   <script>

@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadData();
   initClock();
   setupTabs();
+  initMetrajCalculator();
   renderAll();
 });
 
@@ -1933,6 +1934,642 @@ function handleProposalConvertSubmit(e) {
   saveData();
   closeModal('proposalConvertModal');
   showToast(`✅ ${prop.proposalNo} teklifi onaylandı ve ${method === 'veresiye' ? 'Veresiye Defterine' : 'Kasaya'} işlendi!`);
+}
+
+// ==================== NE KADAR MALZEME GİDER? (METRAJ & SARFİYAT HESAPLAYICI) ====================
+
+let activeMetrajCategory = 'pvc_tavan';
+let pvcInputMode = 'dimensions'; // 'dimensions' (En x Boy) veya 'area' (Toplam m²)
+let currentMetrajCalculated = {
+  title: '',
+  areaText: '',
+  items: []
+};
+
+function initMetrajCalculator() {
+  selectMetrajCalc('pvc_tavan');
+}
+
+function selectMetrajCalc(catKey) {
+  activeMetrajCategory = catKey;
+
+  document.querySelectorAll('#metrajCategoryBar .metraj-cat-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-calc') === catKey);
+  });
+
+  renderMetrajInputs();
+  calculateMetraj();
+  refreshIcons();
+}
+
+function setPvcInputMode(mode) {
+  pvcInputMode = mode;
+  renderMetrajInputs();
+  calculateMetraj();
+}
+
+function renderMetrajInputs() {
+  const container = document.getElementById('metrajInputContainer');
+  if (!container) return;
+
+  if (activeMetrajCategory === 'pvc_tavan') {
+    container.innerHTML = `
+      <h4><i data-lucide="layout-grid"></i> 60x60 PVC / Karolam Asma Tavan Ölçüleri</h4>
+
+      <div class="metraj-mode-toggle">
+        <button type="button" class="metraj-mode-btn ${pvcInputMode === 'dimensions' ? 'active' : ''}" onclick="setPvcInputMode('dimensions')">
+          📏 En x Boy (Metre) Gir
+        </button>
+        <button type="button" class="metraj-mode-btn ${pvcInputMode === 'area' ? 'active' : ''}" onclick="setPvcInputMode('area')">
+          📐 Direkt Toplam m² Gir
+        </button>
+      </div>
+
+      ${pvcInputMode === 'dimensions' ? `
+        <div class="form-row">
+          <div class="form-group">
+            <label>Oda / Tavan Eni (Metre) *</label>
+            <input type="number" step="0.1" min="0.5" id="calcPvcWidth" value="5" oninput="calculateMetraj()">
+          </div>
+          <div class="form-group">
+            <label>Oda / Tavan Boyu (Metre) *</label>
+            <input type="number" step="0.1" min="0.5" id="calcPvcLength" value="8" oninput="calculateMetraj()">
+          </div>
+        </div>
+      ` : `
+        <div class="form-row">
+          <div class="form-group">
+            <label>Toplam Tavan Alanı (m²) *</label>
+            <input type="number" step="0.5" min="1" id="calcPvcArea" value="40" oninput="calculateMetraj()">
+          </div>
+          <div class="form-group">
+            <label>Duvar Çevresi (Metre) <small class="text-muted">(Opsiyonel)</small></label>
+            <input type="number" step="0.5" min="0" id="calcPvcPerimeter" placeholder="Otomatik hesaplanır" oninput="calculateMetraj()">
+          </div>
+        </div>
+      `}
+
+      <div class="form-group">
+        <label>Tavan Plaka Türü</label>
+        <select id="calcPvcPlateType" onchange="calculateMetraj()">
+          <option value="60x60 PVC Asma Tavan Plakası (8mm)">60x60 PVC Asma Tavan Plakası (Silinebilir / Neme Dayanıklı)</option>
+          <option value="60x60 Karolam (Vinil Kaplı Alçı) Plaka">60x60 Karolam (Vinil Kaplı Alçı) Plaka</option>
+          <option value="60x60 Taşyünü Akustik Tavan Plakası">60x60 Taşyünü Akustik Tavan Plakası</option>
+          <option value="60x60 Metal Clip-in / Lay-in Plaka">60x60 Metal Asma Tavan Plakası</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Kesim & Köşe Fire Payı</label>
+        <select id="calcPvcWaste" onchange="calculateMetraj()">
+          <option value="0">%0 (Firesiz Net Hesap)</option>
+          <option value="5" selected>%5 Standart Kesim Payı (Önerilen)</option>
+          <option value="8">%8 Orta Derece Köşeli Alan</option>
+          <option value="10">%10 Çok Kolonlu / Girintili Alan</option>
+        </select>
+      </div>
+    `;
+  } else if (activeMetrajCategory === 'alcipan') {
+    container.innerHTML = `
+      <h4><i data-lucide="layers"></i> Alçıpan Duvar & Düz Tavan Hesabı</h4>
+      <div class="form-group">
+        <label>Uygulama Alanı (m²) *</label>
+        <input type="number" step="1" min="1" id="calcAlcipanArea" value="50" oninput="calculateMetraj()">
+      </div>
+      <div class="form-group">
+        <label>Uygulama Sistem Tipi</label>
+        <select id="calcAlcipanSystem" onchange="calculateMetraj()">
+          <option value="duz_tavan">Düz Alçıpan Asma Tavan (Tavan U/C Profilli)</option>
+          <option value="bolme_tek">Bölme Duvar - Tek Kat Alçıpan (Çift Yüz = 2 Plaka/m²)</option>
+          <option value="bolme_cift">Bölme Duvar - Çift Kat Alçıpan (Çift Yüz = 4 Plaka/m²)</option>
+          <option value="giydirme">Giydirme Duvar - Tek Yüz (1 Plaka/m²)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Alçıpan Plaka Çeşidi (120x250 cm = 3 m²)</label>
+        <select id="calcAlcipanBoardType" onchange="calculateMetraj()">
+          <option value="Beyaz Alçıpan (FX 12.5mm)">Beyaz Standart Alçıpan (120x250cm)</option>
+          <option value="Yeşil Suya Dayanıklı Alçıpan (WR)">Yeşil Suya/Neme Dayanıklı Alçıpan (Banyo/Mutfak)</option>
+          <option value="Kırmızı Yangına Dayanıklı Alçıpan (FR)">Kırmızı Yangına Dayanıklı Alçıpan</option>
+        </select>
+      </div>
+    `;
+  } else if (activeMetrajCategory === 'boya') {
+    container.innerHTML = `
+      <h4><i data-lucide="paint-bucket"></i> İç / Dış Cephe Boya & Astar Hesabı</h4>
+      <div class="form-group">
+        <label>Alan Giriş Yöntemi</label>
+        <select id="calcBoyaMode" onchange="calculateMetraj()">
+          <option value="wall">Boyanacak Net Duvar Alanı (m²)</option>
+          <option value="floor">Evin / Dairenin Taban Alanı (m²) -> (Otomatik x2.8 Duvar)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Alan (m²) *</label>
+        <input type="number" step="1" min="1" id="calcBoyaArea" value="100" oninput="calculateMetraj()">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Boya Türü</label>
+          <select id="calcBoyaType" onchange="calculateMetraj()">
+            <option value="ic_silikonlu">İç Cephe Silikonlu Boya</option>
+            <option value="tavan_plastik">Tavan Boyası (Plastik)</option>
+            <option value="dis_cephe">Dış Cephe Boyası (Akrilik/Silikonlu)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Uygulama Kat Sayısı</label>
+          <select id="calcBoyaCoats" onchange="calculateMetraj()">
+            <option value="1">1 Kat (Tek Kat Yenileme)</option>
+            <option value="2" selected>2 Kat (Standart Uygulama)</option>
+            <option value="3">3 Kat (Koyu Renkten Açığa Geçiş)</option>
+          </select>
+        </div>
+      </div>
+    `;
+  } else if (activeMetrajCategory === 'seramik') {
+    container.innerHTML = `
+      <h4><i data-lucide="grid"></i> Seramik, Fayans, Kalekim & Derz Hesabı</h4>
+      <div class="form-group">
+        <label>Kaplanacak Zemin / Duvar Alanı (m²) *</label>
+        <input type="number" step="1" min="1" id="calcSeramikArea" value="35" oninput="calculateMetraj()">
+      </div>
+      <div class="form-group">
+        <label>Seramik / Granit Ebadı</label>
+        <select id="calcSeramikSize" onchange="calculateMetraj()">
+          <option value="60x60">60x60 cm Yer Seramiği (Çift Taraflı Taraklama)</option>
+          <option value="60x120">60x120 cm Büyük Ebat Granit</option>
+          <option value="30x60">30x60 cm Banyo / Duvar Fayansı</option>
+          <option value="45x45">45x45 cm Standart Seramik</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Kesim Fire Payı (%)</label>
+        <select id="calcSeramikWaste" onchange="calculateMetraj()">
+          <option value="5">%5 Düz Alan</option>
+          <option value="10" selected>%10 Standart Kesim Payı (Önerilen)</option>
+          <option value="15">%15 Diyagonal / Balıksırtı Döşeme</option>
+        </select>
+      </div>
+    `;
+  } else if (activeMetrajCategory === 'siva_alci') {
+    container.innerHTML = `
+      <h4><i data-lucide="hammer"></i> Alçı, Kaba Sıva & Şap Harcı Hesabı</h4>
+      <div class="form-group">
+        <label>Uygulama Türü Seçin</label>
+        <select id="calcSivaType" onchange="calculateMetraj()">
+          <option value="saten_alci">Saten Perdah Alçısı (30 kg Torba - İnce Kat)</option>
+          <option value="siva_alci">Makine / El Sıva Alçısı (35 kg Torba)</option>
+          <option value="hazir_siva">Hazır Çimento Esaslı Kaba Sıva (40 kg Torba)</option>
+          <option value="sap_harci">Zemin Şap Harcı (50 kg Gri Çimento + Kum)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Uygulama Alanı (m²) *</label>
+          <input type="number" step="1" min="1" id="calcSivaArea" value="80" oninput="calculateMetraj()">
+        </div>
+        <div class="form-group">
+          <label>Ortalama Kalınlık (mm)</label>
+          <input type="number" step="1" min="1" id="calcSivaThickness" value="10" oninput="calculateMetraj()">
+        </div>
+      </div>
+    `;
+  } else if (activeMetrajCategory === 'duvar_orme') {
+    container.innerHTML = `
+      <h4><i data-lucide="box"></i> Tuğla, Gazbeton (Ytong) & Duvar Harcı</h4>
+      <div class="form-group">
+        <label>Örülecek Net Duvar Alanı (m²) *</label>
+        <input type="number" step="1" min="1" id="calcDuvarArea" value="60" oninput="calculateMetraj()">
+      </div>
+      <div class="form-group">
+        <label>Duvar Blok / Tuğla Malzemesi</label>
+        <select id="calcDuvarBlockType" onchange="calculateMetraj()">
+          <option value="tugla_135">13.5'luk Tuğla (19x19x13.5 cm - 25 Adet/m²)</option>
+          <option value="tugla_85">8.5'luk Bölme Tuğla (19x19x8.5 cm - 25 Adet/m²)</option>
+          <option value="gazbeton_15">Gazbeton / Ytong Blok 15cm (60x25cm - 6.67 Adet/m²)</option>
+          <option value="gazbeton_10">Gazbeton / Ytong Blok 10cm (60x25cm - 6.67 Adet/m²)</option>
+          <option value="bims_15">Bims /riket Blok 15cm (39x19cm - 12.5 Adet/m²)</option>
+        </select>
+      </div>
+    `;
+  } else if (activeMetrajCategory === 'mantolama') {
+    container.innerHTML = `
+      <h4><i data-lucide="home"></i> Dış Cephe Mantolama (Isı Yalıtım Paketi)</h4>
+      <div class="form-group">
+        <label>Dış Cephe Alanı (m²) *</label>
+        <input type="number" step="1" min="1" id="calcMantoArea" value="120" oninput="calculateMetraj()">
+      </div>
+      <div class="form-group">
+        <label>Yalıtım Levhası Cinsi ve Kalınlığı</label>
+        <select id="calcMantoBoard" onchange="calculateMetraj()">
+          <option value="Karbonlu EPS Mantolama Levhası (5cm)">Karbonlu Gri EPS Levha (5 cm - Standart)</option>
+          <option value="Karbonlu EPS Mantolama Levhası (4cm)">Karbonlu Gri EPS Levha (4 cm)</option>
+          <option value="Taşyünü Mantolama Levhası (5cm - 150 Yoğunluk)">Taşyünü Mantolama Levhası (5 cm - 150 kg/m³)</option>
+        </select>
+      </div>
+    `;
+  }
+}
+
+function calculateMetraj() {
+  const items = [];
+  let title = '';
+  let subtitle = '';
+  let areaBadge = '';
+  let tipHtml = '';
+
+  if (activeMetrajCategory === 'pvc_tavan') {
+    let area = 0;
+    let perimeter = 0;
+
+    if (pvcInputMode === 'dimensions') {
+      const w = Math.max(0.1, parseFloat(document.getElementById('calcPvcWidth')?.value) || 0);
+      const l = Math.max(0.1, parseFloat(document.getElementById('calcPvcLength')?.value) || 0);
+      area = w * l;
+      perimeter = 2 * (w + l);
+    } else {
+      area = Math.max(0.1, parseFloat(document.getElementById('calcPvcArea')?.value) || 0);
+      const customPerim = parseFloat(document.getElementById('calcPvcPerimeter')?.value) || 0;
+      perimeter = customPerim > 0 ? customPerim : (4 * Math.sqrt(area));
+    }
+
+    const plateType = document.getElementById('calcPvcPlateType')?.value || '60x60 PVC Asma Tavan Plakası (8mm)';
+    const wastePct = parseFloat(document.getElementById('calcPvcWaste')?.value) || 0;
+    const factor = 1 + (wastePct / 100);
+
+    // 1. 60x60 Plaka: 1 plaka = 0.36 m² (1 m² = 2.778 adet)
+    const plateCount = Math.ceil((area / 0.36) * factor);
+    const packCount = Math.ceil(plateCount / 8); // Genelde 8 veya 10'lu paket
+
+    // 2. Ana Taşıyıcı T-24 (3.60m boy): 1 m² için ~0.84 mt -> / 3.60m
+    const mainRunnerMeters = area * 0.84 * factor;
+    const mainRunnerCount = Math.max(1, Math.ceil(mainRunnerMeters / 3.60));
+
+    // 3. Uzun Tali Taşıyıcı T-24 (1.20m): 1 m² için 1.40 adet (1.68 mt)
+    const crossTee120Count = Math.max(1, Math.ceil(area * 1.40 * factor));
+
+    // 4. Kısa Tali Taşıyıcı T-24 (0.60m): 1 m² için 1.40 adet (0.84 mt)
+    const crossTee60Count = Math.max(1, Math.ceil(area * 1.40 * factor));
+
+    // 5. Duvar L Köşebent (3.00m boy): Çevre / 3.00m
+    const wallAngleCount = Math.max(1, Math.ceil((perimeter * factor) / 3.00));
+
+    // 6. Askı Teli + Çiftli Yay Klips + Çelik Dübel: 1 m² için ~0.75 takım
+    const hangerSetCount = Math.max(4, Math.ceil(area * 0.75));
+
+    title = `🏁 60x60 Asma Tavan Tam Sistem Reçetesi`;
+    subtitle = `${plateType} &bull; %${wastePct} fire dahil`;
+    areaBadge = `${area.toFixed(1)} m² (Çevre: ${perimeter.toFixed(1)} mt)`;
+
+    items.push(
+      { name: plateType, qty: plateCount, unit: 'Adet', subInfo: `Yaklaşık ${packCount} paket (8'li) • Net ${(plateCount * 0.36).toFixed(1)} m² kaplar`, desc: '1 m² = 2,78 adet 60x60 plaka' },
+      { name: 'Ana Taşıyıcı T-24 Profil (3.60m)', qty: mainRunnerCount, unit: 'Boy', subInfo: `Toplam ${(mainRunnerCount * 3.6).toFixed(1)} metre`, desc: '120 cm aks aralıklı ana omurga' },
+      { name: 'Uzun Tali Taşıyıcı T-24 Profil (1.20m)', qty: crossTee120Count, unit: 'Adet', subInfo: `Toplam ${(crossTee120Count * 1.2).toFixed(1)} metre`, desc: 'Ana taşıyıcıları birbirine bağlar (1,4 adet/m²)' },
+      { name: 'Kısa Tali Taşıyıcı T-24 Profil (0.60m)', qty: crossTee60Count, unit: 'Adet', subInfo: `Toplam ${(crossTee60Count * 0.6).toFixed(1)} metre`, desc: '60x60 kare gözleri böler (1,4 adet/m²)' },
+      { name: 'Duvar L Köşebent Profili (3.00m)', qty: wallAngleCount, unit: 'Boy', subInfo: `Toplam ${(wallAngleCount * 3).toFixed(1)} metre`, desc: `Duvar çevresi (${perimeter.toFixed(1)} mt) dönüş profili` },
+      { name: 'Galvaniz Askı Teli (Tavan Teli)', qty: hangerSetCount, unit: 'Adet', subInfo: `Her 1,3 m²'ye 1 askı`, desc: 'Ana taşıyıcıları tavana asmak için' },
+      { name: 'Çiftli Yay (Klips / Maşa)', qty: hangerSetCount, unit: 'Adet', subInfo: `${hangerSetCount} adet askı noktası için`, desc: 'Tavan terazi / kot ayarı yayı' },
+      { name: 'Tavan Çelik Dübeli (Kancalı / Gömlekli)', qty: hangerSetCount, unit: 'Adet', subInfo: `${hangerSetCount} adet beton bağlantısı`, desc: 'Beton tavana askı teli montajı' }
+    );
+
+    tipHtml = `💡 <strong>Usta Bilgisi (60x60 T-24 Asma Tavan):</strong> 1 m² tavan için standart olarak <strong>2,78 adet</strong> 60x60 plaka, <strong>0,84 mt</strong> ana taşıyıcı (3.60m), <strong>1,68 mt</strong> (1,4 adet) 120'lik tali taşıyıcı ve <strong>0,84 mt</strong> (1,4 adet) 60'lık tali taşıyıcı gider.`;
+
+  } else if (activeMetrajCategory === 'alcipan') {
+    const area = Math.max(1, parseFloat(document.getElementById('calcAlcipanArea')?.value) || 0);
+    const sys = document.getElementById('calcAlcipanSystem')?.value || 'duz_tavan';
+    const boardType = document.getElementById('calcAlcipanBoardType')?.value || 'Beyaz Alçıpan (FX 12.5mm)';
+
+    // 1 plaka = 1.20 x 2.50 = 3.0 m² (%5 fire ile)
+    let layerMultiplier = 1;
+    if (sys === 'bolme_tek') layerMultiplier = 2;
+    if (sys === 'bolme_cift') layerMultiplier = 4;
+
+    const boardCount = Math.ceil(((area * layerMultiplier) / 3.0) * 1.05);
+    const cProfileCount = Math.ceil((area * (sys === 'duz_tavan' ? 2.5 : 2.1)) / 3.0);
+    const uProfileCount = Math.ceil((area * 0.8) / 3.0);
+    const screwCount = Math.ceil(area * (18 * layerMultiplier));
+    const tapeRolls = Math.max(1, Math.ceil((area * 1.4 * (layerMultiplier >= 2 ? 2 : 1)) / 90));
+    const jointCompoundBags = Math.max(1, Math.ceil((area * 0.45 * (layerMultiplier >= 2 ? 2 : 1)) / 25));
+
+    title = `🧱 Alçıpan Sistem Malzeme Reçetesi`;
+    subtitle = `${boardType}`;
+    areaBadge = `${area} m²`;
+
+    items.push(
+      { name: `${boardType} (120x250cm)`, qty: boardCount, unit: 'Adet', subInfo: `Toplam ${boardCount * 3} m² plaka (%5 fire dahil)`, desc: '1 Plaka = 3 m²' },
+      { name: sys === 'duz_tavan' ? 'Tavan C Profili (TC 3.00m)' : 'Duvar C Profili (DC 3.00m)', qty: cProfileCount, unit: 'Boy', subInfo: `${cProfileCount * 3} metre`, desc: '60 cm aks aralıklı taşıyıcı dikme/profil' },
+      { name: sys === 'duz_tavan' ? 'Tavan U Profili (TU 3.00m)' : 'Duvar U Profili (DU 3.00m)', qty: uProfileCount, unit: 'Boy', subInfo: `${uProfileCount * 3} metre`, desc: 'Çevre / Terazi başlangıç profili' },
+      { name: 'Trampet Başlı Alçıpan Vidası (25mm/35mm)', qty: Math.ceil(screwCount / 1000), unit: 'Kutu', subInfo: `Yaklaşık ${screwCount} adet vida`, desc: '1000\'lik kutu hesabı' },
+      { name: 'Derz Dolgu Alçısı (25 kg)', qty: jointCompoundBags, unit: 'Torba', subInfo: `Yaklaşık ${Math.ceil(area * 0.45)} kg sarfiyat`, desc: 'Ek yerleri ve vida başları için' },
+      { name: 'Fileli Alçıpan Derz Bandı (90m)', qty: tapeRolls, unit: 'Adet', subInfo: `${tapeRolls} rulo (90 mt)`, desc: 'Çatlama önleyici ek yeri filesi' }
+    );
+
+    if (sys === 'bolme_tek' || sys === 'bolme_cift') {
+      items.push({ name: 'Ses & Isı Yalıtım Taşyünü / Camyünü', qty: Math.ceil(area * 1.05), unit: 'm²', subInfo: 'Duvar arası yalıtım dolgusu', desc: '%5 fire dahil' });
+    }
+
+    tipHtml = `💡 <strong>Usta Bilgisi:</strong> 1 adet standart alçıpan plaka (120x250 cm) tam <strong>3 m²</strong> yer kaplar. Bölme duvarda önlü-arkalı kaplama yapıldığı için m² başına 2 kat plaka hesaplanır.`;
+
+  } else if (activeMetrajCategory === 'boya') {
+    const mode = document.getElementById('calcBoyaMode')?.value || 'wall';
+    const rawArea = Math.max(1, parseFloat(document.getElementById('calcBoyaArea')?.value) || 0);
+    const paintArea = mode === 'floor' ? Math.round(rawArea * 2.8) : rawArea;
+    const paintType = document.getElementById('calcBoyaType')?.value || 'ic_silikonlu';
+    const coats = parseInt(document.getElementById('calcBoyaCoats')?.value || '2', 10);
+
+    // 1 Litre iç cephe boyası tek katta ~12-14 m², 2 katta ~7 m² boyar
+    const coveragePerLiterSingleCoat = paintType === 'dis_cephe' ? 8 : (paintType === 'tavan_plastik' ? 9 : 13);
+    const totalLitersNeeded = Math.ceil((paintArea * coats) / coveragePerLiterSingleCoat);
+    const buckets15L = Math.floor(totalLitersNeeded / 15);
+    const remainderLiters = totalLitersNeeded % 15;
+    const buckets7_5L = remainderLiters > 5 ? 1 : 0;
+    const buckets2_5L = remainderLiters > 0 && remainderLiters <= 5 ? Math.ceil(remainderLiters / 2.5) : (remainderLiters > 8 ? Math.ceil((remainderLiters - 7.5) / 2.5) : 0);
+
+    const primerLiters = Math.max(2.5, Math.ceil(paintArea / 10));
+    const paintName = paintType === 'dis_cephe' ? 'Dış Cephe Silikonlu Boya' : (paintType === 'tavan_plastik' ? 'Plastik Tavan Boyası' : 'Silikonlu İç Cephe Boyası');
+
+    title = `🎨 Boya & Astar Sarfiyat Reçetesi`;
+    subtitle = `${coats} Kat Uygulama &bull; Net Boyama Alanı: ${paintArea} m²`;
+    areaBadge = `${paintArea} m² Duvar`;
+
+    if (buckets15L > 0) {
+      items.push({ name: `${paintName} (15 Litre / 20 Kg Kova)`, qty: buckets15L, unit: 'Kova', subInfo: `${buckets15L * 15} Litre büyük boy kova`, desc: `${coats} kat uygulama için ana boya` });
+    }
+    if (buckets7_5L > 0) {
+      items.push({ name: `${paintName} (7.5 Litre / 10 Kg Kova)`, qty: buckets7_5L, unit: 'Kova', subInfo: `7,5 Litre orta boy kova`, desc: 'Tamamlayıcı boya miktarı' });
+    }
+    if (buckets2_5L > 0 || (buckets15L === 0 && buckets7_5L === 0)) {
+      items.push({ name: `${paintName} (2.5 Litre / 3.5 Kg Galon)`, qty: Math.max(1, buckets2_5L), unit: 'Adet', subInfo: `${Math.max(1, buckets2_5L) * 2.5} Litre`, desc: 'Tamamlayıcı galon boya' });
+    }
+
+    items.push(
+      { name: 'Boya Öncesi İzolasyon / Geçiş Astarı', qty: Math.ceil(primerLiters / 15) > 0 && primerLiters >= 12 ? Math.ceil(primerLiters / 15) : primerLiters, unit: primerLiters >= 12 ? 'Kova' : 'Litre', subInfo: `Toplam ~${primerLiters} Litre astar`, desc: 'Boyanın kabarmasını önler ve sarfiyatı %25 azaltır' },
+      { name: 'İç/Dış Cephe Boya Rulosu (25 cm) + Sırık', qty: 1, unit: 'Takım', subInfo: 'Mercan / Mikrofiber rulo', desc: 'Ana yüzey uygulaması için' },
+      { name: 'Kestirme Fırçası (No: 2.5 veya 3) + Maskeleme Bandı', qty: 2, unit: 'Adet', subInfo: 'Köşe kestirmeleri ve süpürgelik koruma', desc: 'Yardımcı uygulama malzemesi' }
+    );
+
+    tipHtml = `💡 <strong>Usta Bilgisi:</strong> Toplam <strong>${paintArea} m²</strong> alan için ${coats} katta yaklaşık <strong>${totalLitersNeeded} Litre</strong> boya gerekir. 15 Litrelik (20 kg) büyük boy bir kova boya, 2 katta ortalama <strong>90 - 110 m²</strong> duvar boyar.`;
+
+  } else if (activeMetrajCategory === 'seramik') {
+    const area = Math.max(1, parseFloat(document.getElementById('calcSeramikArea')?.value) || 0);
+    const size = document.getElementById('calcSeramikSize')?.value || '60x60';
+    const wastePct = parseFloat(document.getElementById('calcSeramikWaste')?.value) || 10;
+
+    const totalTileArea = Math.ceil(area * (1 + wastePct / 100));
+    const boxSizeM2 = 1.44; // 60x60 4 adet = 1.44 m²
+    const boxCount = Math.ceil(totalTileArea / boxSizeM2);
+
+    // Kalekim sarfiyatı: 60x60 ve üstünde çift taraflı yapıştırma ~5-6 kg/m², küçük ebatta ~4 kg/m²
+    const adhesiveKgPerM2 = (size === '60x60' || size === '60x120') ? 5.5 : 4.2;
+    const adhesiveBags = Math.max(1, Math.ceil((area * adhesiveKgPerM2) / 25));
+
+    // Derz dolgu: ~0.4 kg/m²
+    const groutKg = Math.max(2, Math.ceil(area * 0.45));
+    const spacerPacks = Math.max(1, Math.ceil(area / 20));
+
+    title = `🟦 Seramik, Yapıştırıcı & Derz Reçetesi`;
+    subtitle = `${size} cm Ebat &bull; %${wastePct} kesim firesi dahil`;
+    areaBadge = `${area} m² Net (${totalTileArea} m² Fireli)`;
+
+    items.push(
+      { name: `${size} cm Seramik / Granit`, qty: totalTileArea, unit: 'm²', subInfo: `Yaklaşık ${boxCount} Kutu (1 kutu ≈ 1,44 m²)`, desc: `%${wastePct} süpürgelik ve kesim firesi dahil` },
+      { name: 'Kalekim Seramik Yapıştırıcı (25 kg)', qty: adhesiveBags, unit: 'Torba', subInfo: `Toplam ${adhesiveBags * 25} kg (1 torba ≈ ${(25 / adhesiveKgPerM2).toFixed(1)} m²)`, desc: `${adhesiveKgPerM2} kg/m² taraklı uygulama sarfiyatı` },
+      { name: 'Flex Derz Dolgu Harcı', qty: groutKg, unit: 'Kg', subInfo: `${Math.ceil(groutKg / 5)} Paket (5 kg'lık)`, desc: 'Derz aralıkları için antibakteriyel dolgu' },
+      { name: 'Seramik Derz Artısı / Takozu', qty: spacerPacks, unit: 'Paket', subInfo: '2mm / 3mm derz artısı', desc: 'Düzgün derz hizalama aparatı' }
+    );
+
+    tipHtml = `💡 <strong>Usta Bilgisi:</strong> 1 torba (25 kg) Kalekim seramik yapıştırıcısı, 60x60 seramikte ortalama <strong>4,5 - 5 m²</strong> yer yapar.`;
+
+  } else if (activeMetrajCategory === 'siva_alci') {
+    const type = document.getElementById('calcSivaType')?.value || 'saten_alci';
+    const area = Math.max(1, parseFloat(document.getElementById('calcSivaArea')?.value) || 0);
+    const thicknessMm = Math.max(1, parseFloat(document.getElementById('calcSivaThickness')?.value) || 10);
+
+    title = `🪣 Alçı, Sıva & Şap Sarfiyat Reçetesi`;
+    subtitle = `${area} m² Alan &bull; ${thicknessMm} mm Kalınlık`;
+    areaBadge = `${area} m²`;
+
+    if (type === 'saten_alci') {
+      // Saten alçı 1 mm kalınlık için ~1 kg/m² (genelde 1-2 mm çekilir)
+      const effThick = Math.min(thicknessMm, 3);
+      const totalKg = Math.ceil(area * effThick * 1.1);
+      const bags30 = Math.max(1, Math.ceil(totalKg / 30));
+      items.push({ name: 'Saten Perdah Alçısı (30 kg)', qty: bags30, unit: 'Torba', subInfo: `Toplam ${bags30 * 30} kg (1 torba ≈ 25-30 m²)`, desc: 'Boya altı pürüzsüz son kat perdah alçısı' });
+      tipHtml = `💡 <strong>Usta Bilgisi:</strong> 1 torba (30 kg) Saten Alçı ile ortalama <strong>25 - 30 m²</strong> yüzeye son kat perdah çekilir.`;
+    } else if (type === 'siva_alci') {
+      // Sıva alçısı: 10 mm (1 cm) kalınlıkta ~9.5 kg/m²
+      const totalKg = Math.ceil(area * thicknessMm * 0.95);
+      const bags35 = Math.max(1, Math.ceil(totalKg / 35));
+      items.push({ name: 'Makine / El Sıva Alçısı (35 kg)', qty: bags35, unit: 'Torba', subInfo: `Toplam ${bags35 * 35} kg (1 torba ≈ ${(35 / (thicknessMm * 0.95)).toFixed(1)} m²)`, desc: `${thicknessMm} mm kalınlık için alçı sarfiyatı` });
+      tipHtml = `💡 <strong>Usta Bilgisi:</strong> 1 cm (10 mm) kalınlığında sıva alçısı uygulamasında m²'ye yaklaşık <strong>9,5 - 10 kg</strong> alçı gider (1 torba = ~3,5 m²).`;
+    } else if (type === 'hazir_siva') {
+      // Çimento esaslı kaba sıva: 10 mm için ~15 kg/m²
+      const totalKg = Math.ceil(area * thicknessMm * 1.5);
+      const bags40 = Math.max(1, Math.ceil(totalKg / 40));
+      items.push({ name: 'Hazır Kaba Sıva Harcı (40 kg)', qty: bags40, unit: 'Torba', subInfo: `Toplam ${bags40 * 40} kg`, desc: `${thicknessMm} mm kalınlıkta çimento esaslı sıva` });
+      tipHtml = `💡 <strong>Usta Bilgisi:</strong> Çimento esaslı hazır sıvada 1 cm kalınlık için m²'ye yaklaşık <strong>15 kg</strong> harç gider.`;
+    } else {
+      // Zemin Şap Harcı: m³ hacim = area * (thicknessMm / 1000)
+      const volumeM3 = area * (thicknessMm / 1000);
+      // 1 m³ şap harcına ~300-350 kg (6-7 torba) çimento + 1.1 m³ kum gider
+      const cementBags = Math.max(1, Math.ceil(volumeM3 * 7));
+      const sandTon = Number((volumeM3 * 1.6).toFixed(1));
+      items.push(
+        { name: 'Gri Çimento 50kg', qty: cementBags, unit: 'Torba', subInfo: `Toplam ${cementBags * 50} kg çimento`, desc: `${thicknessMm} mm (${(thicknessMm / 10).toFixed(1)} cm) şap dökümü için` },
+        { name: 'Elanmış Şap / Sıva Kumu', qty: Math.max(0.5, sandTon), unit: 'Ton', subInfo: `Yaklaşık ${volumeM3.toFixed(1)} m³ hacim`, desc: 'Şap harcı agregası' }
+      );
+      tipHtml = `💡 <strong>Usta Bilgisi:</strong> ${area} m² zemine ${(thicknessMm / 10).toFixed(1)} cm şap atmak için <strong>${volumeM3.toFixed(2)} m³</strong> harç gerekir.`;
+    }
+
+  } else if (activeMetrajCategory === 'duvar_orme') {
+    const area = Math.max(1, parseFloat(document.getElementById('calcDuvarArea')?.value) || 0);
+    const blockType = document.getElementById('calcDuvarBlockType')?.value || 'tugla_135';
+
+    title = `🧱 Duvar Örme Malzeme Reçetesi`;
+    areaBadge = `${area} m² Duvar`;
+
+    if (blockType === 'tugla_135' || blockType === 'tugla_85') {
+      const label = blockType === 'tugla_135' ? "13.5'luk Yatay Delikli Tuğla" : "8.5'luk Bölme Duvar Tuğlası";
+      const count = Math.ceil(area * 26); // 25 adet + %4 kırık payı
+      const cementBags = Math.max(1, Math.ceil(area * 0.14)); // 1 torba çimento ~7 m² duvar örer
+      items.push(
+        { name: label, qty: count, unit: 'Adet', subInfo: `m²'ye 25 adet (+kırık payı dahil)`, desc: `${area} m² duvar için toplam tuğla` },
+        { name: 'Gri Çimento 50kg (Örme Harcı İçin)', qty: cementBags, unit: 'Torba', subInfo: `Yaklaşık ${(area * 0.025).toFixed(1)} m³ harç kumu ile`, desc: 'Duvar örme harcı çimentosu' }
+      );
+      tipHtml = `💡 <strong>Usta Bilgisi:</strong> Standart 19x19 cm tuğladan 1 m² duvara <strong>25 adet</strong> gider.`;
+    } else if (blockType === 'gazbeton_15' || blockType === 'gazbeton_10') {
+      const label = blockType === 'gazbeton_15' ? 'Gazbeton (Ytong) Blok 15cm' : 'Gazbeton (Ytong) Blok 10cm';
+      const count = Math.ceil(area * 6.9); // 6.67 adet/m² + %3 fire
+      const glueBags = Math.max(1, Math.ceil((area * (blockType === 'gazbeton_15' ? 4.5 : 3.2)) / 25));
+      items.push(
+        { name: label, qty: count, unit: 'Adet', subInfo: `1 m² = 6,67 adet (60x25 cm blok)`, desc: `${area} m² duvar için gazbeton adedi` },
+        { name: 'Gazbeton / Ytong Yapıştırıcısı (25 kg)', qty: glueBags, unit: 'Torba', subInfo: `Toplam ${glueBags * 25} kg`, desc: 'İnce yatak gazbeton örme harcı' }
+      );
+      tipHtml = `💡 <strong>Usta Bilgisi:</strong> 60x25 cm ebadındaki Gazbeton bloktan 1 m² duvara <strong>6,67 adet</strong> gider.`;
+    } else {
+      const count = Math.ceil(area * 13); // 12.5 adet/m² + fire
+      const cementBags = Math.max(1, Math.ceil(area * 0.16));
+      items.push(
+        { name: 'Bims / Briket Blok (15cm)', qty: count, unit: 'Adet', subInfo: `1 m² = 12,5 adet (39x19 cm)`, desc: `${area} m² duvar için bims adedi` },
+        { name: 'Gri Çimento 50kg', qty: cementBags, unit: 'Torba', subInfo: 'Örme harcı için', desc: 'Duvar harcı çimentosu' }
+      );
+      tipHtml = `💡 <strong>Usta Bilgisi:</strong> Standart Bims bloktan 1 m² duvara <strong>12,5 adet</strong> gider.`;
+    }
+
+  } else if (activeMetrajCategory === 'mantolama') {
+    const area = Math.max(1, parseFloat(document.getElementById('calcMantoArea')?.value) || 0);
+    const boardName = document.getElementById('calcMantoBoard')?.value || 'Karbonlu EPS Mantolama Levhası (5cm)';
+
+    const boardM2 = Math.ceil(area * 1.05);
+    const packCount = Math.ceil(boardM2 / 5); // 5 cm pakette 5 m² (10 adet 50x100cm)
+    const adhesiveBags = Math.ceil((area * 4.5) / 25); // 4.5 kg/m²
+    const plasterBags = Math.ceil((area * 4.5) / 25); // 4.5 kg/m²
+    const meshM2 = Math.ceil(area * 1.15); // %15 bindirme payı
+    const meshRolls = Math.ceil(meshM2 / 50); // 1 top = 50 m²
+    const dowelCount = Math.ceil(area * 6); // m²'ye 6 dübel
+    const mineralBags = Math.ceil((area * 2.5) / 25); // 2.5 kg/m² dekoratif kaplama
+    const cornerProfiles = Math.max(4, Math.ceil(area * 0.15));
+
+    title = `🏠 Dış Cephe Mantolama Paket Reçetesi`;
+    subtitle = `${boardName}`;
+    areaBadge = `${area} m² Cephe`;
+
+    items.push(
+      { name: boardName, qty: boardM2, unit: 'm²', subInfo: `Yaklaşık ${packCount} Paket (1 paket = 5 m²)`, desc: '%5 kesim firesi dahil yalıtım levhası' },
+      { name: 'Isı Yalıtım Levha Yapıştırma Harcı (25 kg)', qty: adhesiveBags, unit: 'Torba', subInfo: `Toplam ${adhesiveBags * 25} kg (4,5 kg/m²)`, desc: 'Levhaları cepheye yapıştırma harcı' },
+      { name: 'Isı Yalıtım Levha Sıva Harcı (25 kg)', qty: plasterBags, unit: 'Torba', subInfo: `Toplam ${plasterBags * 25} kg (4,5 kg/m²)`, desc: 'File gömme ve yüzey sıva harcı' },
+      { name: 'Mantolama Sıva Filesi (160 gr/m²)', qty: meshM2, unit: 'm²', subInfo: `${meshRolls} Top Rulo (1 top = 50 m²)`, desc: '%15 ek yeri bindirme payı dahil' },
+      { name: 'Mantolama Dübeli (10 cm / 12 cm)', qty: dowelCount, unit: 'Adet', subInfo: `m² başına 6 adet dübel`, desc: 'Mekanik sabitleme dübeli' },
+      { name: 'Dekoratif Mineral Sıva (25 kg)', qty: mineralBags, unit: 'Torba', subInfo: `Toplam ${mineralBags * 25} kg (2,5 kg/m²)`, desc: 'Boya öncesi desenli dış cephe kaplaması' },
+      { name: 'Fileli PVC Köşe Profili (2.50m)', qty: cornerProfiles, unit: 'Boy', subInfo: 'Bina köşeleri ve pencere merkezleri için', desc: 'Darbe dayanımlı fileli köşebent' }
+    );
+
+    tipHtml = `💡 <strong>Usta Bilgisi:</strong> 100 m² mantolama için ortalama <strong>18 torba</strong> yapıştırıcı, <strong>18 torba</strong> sıva, <strong>600 adet</strong> dübel ve <strong>115 m²</strong> (2,5 top) sıva filesi gider.`;
+  }
+
+  currentMetrajCalculated = {
+    title,
+    areaText: areaBadge,
+    items
+  };
+
+  const titleEl = document.getElementById('metrajResultTitle');
+  const subEl = document.getElementById('metrajResultSubtitle');
+  const badgeEl = document.getElementById('metrajAreaBadge');
+  const listEl = document.getElementById('metrajItemsList');
+  const tipEl = document.getElementById('metrajTipBox');
+
+  if (titleEl) titleEl.textContent = title;
+  if (subEl) subEl.innerHTML = subtitle;
+  if (badgeEl) badgeEl.textContent = areaBadge;
+  if (tipEl) tipEl.innerHTML = tipHtml;
+
+  if (listEl) {
+    listEl.innerHTML = items.map(it => `
+      <div class="metraj-item-card">
+        <div class="metraj-item-info">
+          <strong>${escapeHtml(it.name)}</strong>
+          <span>${escapeHtml(it.desc || '')}</span>
+        </div>
+        <div class="metraj-item-qty">
+          <div class="qty-main">${Number(it.qty).toLocaleString('tr-TR')} ${escapeHtml(it.unit)}</div>
+          <span class="qty-sub">${escapeHtml(it.subInfo || '')}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function findMatchingPriceForMetrajItem(itemName) {
+  const clean = (itemName || '').toLowerCase();
+  const list = appState.priceList || [];
+
+  // 1. Tam eşleşme kontrolü
+  const exact = list.find(p => (p.name || '').toLowerCase() === clean);
+  if (exact) return Number(exact.sellPrice || 0);
+
+  // 2. Kelime bazlı akıllı eşleşme (Örn: "Gri Çimento 50kg", "Saten Alçı", "Kalekim")
+  for (const p of list) {
+    const pName = (p.name || '').toLowerCase();
+    if (clean.includes('çimento') && pName.includes('çimento')) return Number(p.sellPrice || 0);
+    if (clean.includes('saten') && pName.includes('saten')) return Number(p.sellPrice || 0);
+    if (clean.includes('kalekim') && pName.includes('kalekim')) return Number(p.sellPrice || 0);
+  }
+  return 0;
+}
+
+function transferMetrajToProposal() {
+  if (!currentMetrajCalculated.items || currentMetrajCalculated.items.length === 0) {
+    return alert('Önce malzeme hesaplaması yapın.');
+  }
+
+  openProposalModal();
+  const container = document.getElementById('propRowsContainer');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  currentMetrajCalculated.items.forEach(item => {
+    const autoPrice = findMatchingPriceForMetrajItem(item.name);
+    addProposalRow({
+      name: item.name,
+      qty: item.qty,
+      unit: item.unit,
+      unitPrice: autoPrice > 0 ? autoPrice : '',
+      discount: 0
+    });
+  });
+
+  const notesEl = document.getElementById('propNotes');
+  if (notesEl) {
+    notesEl.value = `${currentMetrajCalculated.title} (${currentMetrajCalculated.areaText}) ölçülerine göre hesaplanmıştır. Fiyatlarımız stoklarla sınırlıdır.`;
+  }
+
+  calculateProposalTotals();
+  showToast('⚡ Hesaplanan tüm malzemeler Teklif Formuna aktarıldı! Birim fiyatları kontrol edip kaydedebilirsiniz.');
+}
+
+function buildMetrajShareText() {
+  const shopName = appState.settings?.shopName || 'Serhat İnşaat';
+  let text = `📐 *${shopName.toUpperCase()} - MALZEME SARFİYAT LİSTESİ*\n`;
+  text += `━━━━━━━━━━━━━━━━━━━━\n`;
+  text += `📌 *İşlem:* ${currentMetrajCalculated.title.replace(/^[^\s]+\s/, '')}\n`;
+  text += `📏 *Ölçü / Alan:* ${currentMetrajCalculated.areaText}\n`;
+  text += `━━━━━━━━━━━━━━━━━━━━\n`;
+  text += `📦 *GEREKEN MALZEMELER:*\n`;
+
+  (currentMetrajCalculated.items || []).forEach((it, idx) => {
+    text += `${idx + 1}. *${it.name}:* ${it.qty} ${it.unit}`;
+    if (it.subInfo) text += ` _(${it.subInfo})_`;
+    text += `\n`;
+  });
+
+  text += `━━━━━━━━━━━━━━━━━━━━\n`;
+  text += `*${shopName}*`;
+  return text;
+}
+
+function sendMetrajWhatsApp() {
+  const text = buildMetrajShareText();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  showToast('💬 Malzeme listesi WhatsApp için hazırlandı!');
+}
+
+function copyMetrajText() {
+  const text = buildMetrajShareText().replace(/\*/g, '').replace(/_/g, '');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('📋 Malzeme listesi panoya kopyalandı!');
+    }).catch(() => {
+      alert(text);
+    });
+  } else {
+    alert(text);
+  }
 }
 
 // ==================== AYARLAR & UYGULAMA İÇİ YEDEKLEME ====================

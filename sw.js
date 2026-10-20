@@ -1,4 +1,4 @@
-const CACHE_NAME = 'serhat-kasa-pwa-v9';
+const CACHE_NAME = 'serhat-kasa-pwa-v10';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

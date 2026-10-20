@@ -1980,3 +1980,228 @@ html, body {
   cursor: not-allowed;
 }
 
+/* ==================== METRAJ & SARFİYAT HESAPLAYICI MODÜLÜ ==================== */
+.metraj-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.metraj-cat-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  color: #334155;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  text-align: left;
+}
+
+.metraj-cat-btn i {
+  width: 20px;
+  height: 20px;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.metraj-cat-btn:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+}
+
+.metraj-cat-btn.active {
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+  color: #ffffff;
+  border-color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.metraj-cat-btn.active i {
+  color: #ffffff;
+}
+
+.metraj-workspace {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.metraj-input-panel {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.metraj-input-panel h4 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metraj-mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background: #e2e8f0;
+  padding: 4px;
+  border-radius: 9px;
+  margin-bottom: 14px;
+}
+
+.metraj-mode-btn {
+  border: none;
+  background: transparent;
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+}
+
+.metraj-mode-btn.active {
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.metraj-result-panel {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.metraj-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 14px;
+}
+
+.metraj-result-header h4 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.metraj-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.metraj-item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #2563eb;
+  border-radius: 10px;
+}
+
+.metraj-item-info strong {
+  display: block;
+  font-size: 0.94rem;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.metraj-item-info span {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.metraj-item-qty {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.metraj-item-qty .qty-main {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #15803d;
+  font-variant-numeric: tabular-nums;
+}
+
+.metraj-item-qty .qty-sub {
+  display: block;
+  font-size: 0.75rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.metraj-tip-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.83rem;
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+
+.metraj-actions-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 960px) {
+  .metraj-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .metraj-cat-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+  .metraj-cat-btn {
+    padding: 10px;
+    font-size: 0.78rem;
+    gap: 7px;
+  }
+  .metraj-input-panel,
+  .metraj-result-panel {
+    padding: 14px 12px;
+  }
+  .metraj-item-card {
+    padding: 10px 12px;
+  }
+  .metraj-actions-bar {
+    flex-direction: column;
+  }
+  .metraj-actions-bar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
