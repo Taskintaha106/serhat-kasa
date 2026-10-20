@@ -1206,8 +1206,9 @@
   </div>
 
   <!-- ==================== DÜKKAN GİRİŞİ & KAYIT MODALI ==================== -->
-  <div id="authModalOverlay" class="auth-overlay" style="display:none; position:fixed; inset:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.94); z-index:999999; align-items:center; justify-content:center; padding:12px; box-sizing:border-box; overflow-y:auto;">
-    <div class="auth-card" style="background:#ffffff; width:100%; max-width:440px; max-height:92vh; border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.45); overflow-y:auto;">
+  <div id="authModalOverlay" class="auth-overlay" style="display:none; position:fixed; inset:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.85); z-index:999999; align-items:center; justify-content:center; padding:12px; box-sizing:border-box; overflow-y:auto;" onclick="if(event.target===this) this.style.display='none';">
+    <div class="auth-card" style="position:relative; background:#ffffff; width:100%; max-width:440px; max-height:92vh; border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.45); overflow-y:auto;">
+      <button type="button" class="modal-close" style="position:absolute; top:14px; right:16px; background:transparent; border:none; font-size:26px; cursor:pointer; color:#64748b; line-height:1; z-index:10;" onclick="document.getElementById('authModalOverlay').style.display='none'" title="Kapat">&times;</button>
       <div class="auth-header">
         <div class="auth-logo">
           <i data-lucide="store" style="width:26px;height:26px;"></i>
@@ -1254,6 +1255,12 @@
           <button type="submit" id="btnLoginSubmit" class="btn-auth btn-primary" style="background:#2563eb; color:#fff; width:100%; margin-top:4px;">
             <i data-lucide="log-in"></i> Dükkana Giriş Yap
           </button>
+
+          <div style="text-align:center; margin-top:10px;">
+            <button type="button" class="btn-link" style="background:none; border:none; color:#64748b; font-size:0.85rem; text-decoration:underline; cursor:pointer;" onclick="document.getElementById('authModalOverlay').style.display='none'">
+              Yerel / Çevrimdışı Olarak Devam Et (Giriş Yapmadan Kullan)
+            </button>
+          </div>
         </form>
 
         <!-- 2. KAYIT FORMU -->
@@ -1295,6 +1302,12 @@
           <button type="submit" id="btnRegSubmit" class="btn-auth btn-success" style="background:#16a34a; color:#fff; width:100%; margin-top:4px;">
             <i data-lucide="store"></i> Dükkanımı Kaydet ve Başla
           </button>
+
+          <div style="text-align:center; margin-top:10px;">
+            <button type="button" class="btn-link" style="background:none; border:none; color:#64748b; font-size:0.85rem; text-decoration:underline; cursor:pointer;" onclick="document.getElementById('authModalOverlay').style.display='none'">
+              Vazgeç ve Çevrimdışı Devam Et
+            </button>
+          </div>
         </form>
 
         <!-- 3. ŞİFREMİ UNUTTUM FORMU -->
