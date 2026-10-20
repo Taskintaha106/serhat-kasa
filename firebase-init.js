@@ -194,15 +194,23 @@ async function logoutShop() {
 }
 
 // ────── SENKRONIZASYON ROZETİ ──────
-function updateSyncBadge(online, errMsg = '') {
+function updateSyncBadge(status, customMsg = '') {
   const badge = document.querySelector('.badge-status');
   if (!badge) return;
-  if (online) {
+  badge.style.cursor = 'pointer';
+
+  if (status === 'online' || status === true) {
     badge.innerHTML = `<span class="status-dot" style="background:#22c55e;"></span> ☁️ Bulut Senkronize`;
     badge.title = "Firebase Firestore ile bağlı ve senkronize";
+    badge.onclick = null;
+  } else if (status === 'unauth') {
+    badge.innerHTML = `<span class="status-dot" style="background:#f59e0b;"></span> 🔒 Dükkan Girişi Yapın`;
+    badge.title = "Dükkanınıza giriş yapmak için tıklayın";
+    badge.onclick = () => window.openAuthModal && window.openAuthModal();
   } else {
     badge.innerHTML = `<span class="status-dot" style="background:#ef4444;"></span> ⚠️ Bulut Bağlantı Sorunu`;
-    badge.title = errMsg || "Firebase kuralları veya ağ hatası";
+    badge.title = customMsg || "İnternet bağlantınızı veya Firebase kurallarını kontrol edin";
+    badge.onclick = () => window.openAuthModal && window.openAuthModal();
   }
 }
 
@@ -232,6 +240,7 @@ onAuthStateChanged(auth, async (user) => {
     if (btnLogout) btnLogout.style.display = 'inline-flex';
 
     if (window.lucide) window.lucide.createIcons();
+    updateSyncBadge('online');
     await loadFromCloud();
   } else {
     currentUser = null;
@@ -242,10 +251,16 @@ onAuthStateChanged(auth, async (user) => {
     if (btnLogout) btnLogout.style.display = 'none';
     if (shopTitle) shopTitle.textContent = "Serhat İnşaat";
 
-    updateSyncBadge(false, "Oturum açılmadı");
+    updateSyncBadge('unauth');
     if (window.clearAppState) window.clearAppState();
   }
 });
+
+// Modal Açıcı
+window.openAuthModal = function() {
+  const authModal = document.getElementById('authModalOverlay');
+  if (authModal) authModal.style.display = 'flex';
+};
 
 // ────── GLOBAL API ──────
 window.firebaseDB = {
@@ -255,6 +270,7 @@ window.firebaseDB = {
   register: registerShop,
   resetPassword: resetShopPassword,
   logout: logoutShop,
+  openModal: window.openAuthModal,
   getCurrentUser: () => currentUser,
   getCurrentShop: () => currentShop
 };

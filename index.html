@@ -19,7 +19,7 @@
   <!-- Lucide Icons (Offline & Fast) -->
   <script src="lucide.min.js"></script>
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 
@@ -31,8 +31,8 @@
       </div>
       <div>
         <h1 id="headerShopTitle">Serhat İnşaat</h1>
-        <span class="badge-status">
-          <span class="status-dot"></span> Çevrimdışı / Güvenli Yerel Kayıt
+        <span class="badge-status" onclick="window.openAuthModal && window.openAuthModal()" style="cursor:pointer;" title="Dükkan girişi için tıklayın">
+          <span class="status-dot" style="background:#f59e0b;"></span> 🔒 Dükkan Girişi Yapın
         </span>
       </div>
     </div>
@@ -797,8 +797,8 @@
   </div>
 
   <!-- ==================== DÜKKAN GİRİŞİ & KAYIT MODALI ==================== -->
-  <div id="authModalOverlay" class="auth-overlay" style="display:none;">
-    <div class="auth-card">
+  <div id="authModalOverlay" class="auth-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15, 23, 42, 0.88); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:999999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
+    <div class="auth-card" style="background:#ffffff; width:100%; max-width:460px; border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.45); overflow:hidden;">
       <div class="auth-header">
         <div class="auth-logo">
           <i data-lucide="store" style="width:26px;height:26px;"></i>
