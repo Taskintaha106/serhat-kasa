@@ -15,7 +15,10 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
-  onAuthStateChanged
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // Firebase Config
@@ -33,8 +36,62 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+const REMEMBER_KEY = 'serhat_kasa_remember_auth_v1';
 let currentUser = null;
 let currentShop = null;
+let autoLoginAttempted = false;
+
+function saveRememberedCredentials(identifier, email, password, remember) {
+  try {
+    if (remember) {
+      const payload = {
+        identifier: identifier.trim(),
+        email: email.trim().toLowerCase(),
+        passB64: btoa(unescape(encodeURIComponent(password))),
+        remember: true,
+        autoLogin: true,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem(REMEMBER_KEY, JSON.stringify(payload));
+    } else {
+      localStorage.removeItem(REMEMBER_KEY);
+    }
+  } catch (e) {
+    console.warn("Beni hatırla kaydı yapılamadı:", e);
+  }
+}
+
+function getRememberedCredentials() {
+  try {
+    const raw = localStorage.getItem(REMEMBER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.remember && parsed.email && parsed.passB64) {
+      return {
+        ...parsed,
+        password: decodeURIComponent(escape(atob(parsed.passB64)))
+      };
+    }
+  } catch (e) {}
+  return null;
+}
+
+function prefillLoginInputs() {
+  const saved = getRememberedCredentials();
+  if (!saved) return;
+  const idInput = document.getElementById('loginIdentifier');
+  const passInput = document.getElementById('loginPassword');
+  const remCheck = document.getElementById('loginRememberMe');
+  if (idInput && !idInput.value) idInput.value = saved.identifier || saved.email;
+  if (passInput && !passInput.value && saved.password) passInput.value = saved.password;
+  if (remCheck) remCheck.checked = true;
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', prefillLoginInputs);
+} else {
+  prefillLoginInputs();
+}
 
 // Sayfa açıldığında mevcut yerel veriyi kontrol et ve sakla (eski sürümden geçişte veriyi korumak için)
 let preservedLocalData = null;
@@ -111,7 +168,7 @@ async function loadFromCloud() {
 // ────── KULLANICI İŞLEMLERİ ──────
 
 // 1. Yeni Dükkan Kaydı
-async function registerShop(shopName, username, email, password) {
+async function registerShop(shopName, username, email, password, rememberMe = true) {
   const cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
   if (cleanUsername.length < 3) {
     throw new Error("Kullanıcı adı en az 3 karakter olmalıdır (sadece harf, rakam, tire veya alt çizgi).");
@@ -130,6 +187,8 @@ async function registerShop(shopName, username, email, password) {
   if (snap.exists()) {
     throw new Error("Bu kullanıcı adı başka bir dükkan tarafından kullanılıyor. Lütfen başka bir kullanıcı adı seçin.");
   }
+
+  await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
 
   // Firebase Auth ile hesap oluştur
   const userCred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
@@ -157,11 +216,13 @@ async function registerShop(shopName, username, email, password) {
     email: cleanEmail
   };
 
+  saveRememberedCredentials(cleanUsername, cleanEmail, password, rememberMe);
+
   return userCred.user;
 }
 
 // 2. Dükkan Girişi (Kullanıcı Adı VEYA E-posta ile)
-async function loginShop(identifier, password) {
+async function loginShop(identifier, password, rememberMe = true) {
   const cleanId = identifier.trim().toLowerCase();
   let emailToUse = cleanId;
 
@@ -175,7 +236,10 @@ async function loginShop(identifier, password) {
     emailToUse = snap.data().email;
   }
 
+  await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+
   const userCred = await signInWithEmailAndPassword(auth, emailToUse, password);
+  saveRememberedCredentials(identifier, emailToUse, password, rememberMe);
   return userCred.user;
 }
 
@@ -199,10 +263,18 @@ async function resetShopPassword(identifier) {
 
 // 4. Çıkış Yap
 async function logoutShop() {
+  try {
+    const raw = localStorage.getItem(REMEMBER_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      parsed.autoLogin = false;
+      localStorage.setItem(REMEMBER_KEY, JSON.stringify(parsed));
+    }
+  } catch (e) {}
   await signOut(auth);
-  if (typeof window.clearAppState === 'function') {
-    window.clearAppState();
-  }
+  const authModal = document.getElementById('authModalOverlay');
+  if (authModal) authModal.style.display = 'flex';
+  prefillLoginInputs();
 }
 
 // ────── SENKRONIZASYON ROZETİ ──────
@@ -236,6 +308,10 @@ onAuthStateChanged(auth, async (user) => {
 
   if (user) {
     currentUser = user;
+    if (authModal) authModal.style.display = 'none';
+    if (userBadge) userBadge.style.display = 'inline-flex';
+    if (btnLogout) btnLogout.style.display = 'inline-flex';
+
     try {
       const shopSnap = await getDoc(doc(db, "shops", user.uid));
       if (shopSnap.exists()) {
@@ -247,24 +323,32 @@ onAuthStateChanged(auth, async (user) => {
       console.warn("Profil yükleme uyarısı:", e);
     }
 
-    if (authModal) authModal.style.display = 'none';
-    if (userBadge) userBadge.style.display = 'inline-flex';
-    if (btnLogout) btnLogout.style.display = 'inline-flex';
-
     if (window.lucide) window.lucide.createIcons();
     updateSyncBadge('online');
     await loadFromCloud();
   } else {
+    // Eğer "Beni Hatırla" ile kayıtlı oturum varsa arka planda sessizce otomatik giriş yap (Şifre ekranını hiç gösterme!)
+    const saved = getRememberedCredentials();
+    if (saved && saved.autoLogin && !autoLoginAttempted) {
+      autoLoginAttempted = true;
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        await signInWithEmailAndPassword(auth, saved.email, saved.password);
+        return;
+      } catch (autoErr) {
+        console.warn("Otomatik giriş başarısız oldu:", autoErr);
+      }
+    }
+
     currentUser = null;
     currentShop = null;
 
+    prefillLoginInputs();
     if (authModal) authModal.style.display = 'flex';
     if (userBadge) userBadge.style.display = 'none';
     if (btnLogout) btnLogout.style.display = 'none';
-    if (shopTitle) shopTitle.textContent = "Serhat İnşaat";
 
     updateSyncBadge('unauth');
-    if (window.clearAppState) window.clearAppState();
   }
 });
 

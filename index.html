@@ -1110,7 +1110,7 @@
   </div>
 
   <!-- ==================== DÜKKAN GİRİŞİ & KAYIT MODALI ==================== -->
-  <div id="authModalOverlay" class="auth-overlay" style="display:flex; position:fixed; inset:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.94); z-index:999999; align-items:center; justify-content:center; padding:12px; box-sizing:border-box; overflow-y:auto;">
+  <div id="authModalOverlay" class="auth-overlay" style="display:none; position:fixed; inset:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.94); z-index:999999; align-items:center; justify-content:center; padding:12px; box-sizing:border-box; overflow-y:auto;">
     <div class="auth-card" style="background:#ffffff; width:100%; max-width:440px; max-height:92vh; border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.45); overflow-y:auto;">
       <div class="auth-header">
         <div class="auth-logo">
@@ -1148,7 +1148,14 @@
             <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
           </div>
 
-          <button type="submit" id="btnLoginSubmit" class="btn-auth btn-primary" style="background:#2563eb; color:#fff; width:100%; margin-top:8px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; padding:10px 12px; border-radius:8px; border:1px solid #e2e8f0;">
+            <label for="loginRememberMe" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0; font-size:0.86rem; color:#0f172a; font-weight:600; width:100%;">
+              <input type="checkbox" id="loginRememberMe" checked style="width:18px; height:18px; accent-color:#2563eb; cursor:pointer; margin:0;">
+              <span>Beni Hatırla <small style="font-weight:normal; color:#64748b;">(Her girişte şifre sorma)</small></span>
+            </label>
+          </div>
+
+          <button type="submit" id="btnLoginSubmit" class="btn-auth btn-primary" style="background:#2563eb; color:#fff; width:100%; margin-top:4px;">
             <i data-lucide="log-in"></i> Dükkana Giriş Yap
           </button>
         </form>
@@ -1182,7 +1189,14 @@
             <input type="password" id="regPasswordConfirm" placeholder="••••••••" required minlength="6" autocomplete="new-password">
           </div>
 
-          <button type="submit" id="btnRegSubmit" class="btn-auth btn-success" style="background:#16a34a; color:#fff; width:100%; margin-top:8px;">
+          <div style="display:flex; align-items:center; background:#f8fafc; padding:10px 12px; border-radius:8px; border:1px solid #e2e8f0;">
+            <label for="regRememberMe" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0; font-size:0.86rem; color:#0f172a; font-weight:600; width:100%;">
+              <input type="checkbox" id="regRememberMe" checked style="width:18px; height:18px; accent-color:#16a34a; cursor:pointer; margin:0;">
+              <span>Beni Hatırla <small style="font-weight:normal; color:#64748b;">(Oturumu sürekli açık tut)</small></span>
+            </label>
+          </div>
+
+          <button type="submit" id="btnRegSubmit" class="btn-auth btn-success" style="background:#16a34a; color:#fff; width:100%; margin-top:4px;">
             <i data-lucide="store"></i> Dükkanımı Kaydet ve Başla
           </button>
         </form>
@@ -1216,9 +1230,9 @@
   <div id="toast" class="toast"></div>
 
   <!-- Firebase CDN Modülü -->
-  <script type="module" src="firebase-init.js?v=14"></script>
+  <script type="module" src="firebase-init.js?v=15"></script>
   <!-- Uygulama Scripti -->
-  <script src="app.js?v=14" defer></script>
+  <script src="app.js?v=15" defer></script>
 
   <!-- Auth UI İşleyicileri -->
   <script>
@@ -1272,6 +1286,7 @@
       const btn = document.getElementById('btnLoginSubmit');
       const idVal = document.getElementById('loginIdentifier').value.trim();
       const passVal = document.getElementById('loginPassword').value;
+      const rememberMe = document.getElementById('loginRememberMe')?.checked !== false;
 
       alertEl.style.display = 'none';
       btn.disabled = true;
@@ -1281,7 +1296,7 @@
         if (!window.firebaseDB || !window.firebaseDB.login) {
           throw new Error('Firebase başlatılıyor, lütfen birkaç saniye sonra tekrar deneyin.');
         }
-        await window.firebaseDB.login(idVal, passVal);
+        await window.firebaseDB.login(idVal, passVal, rememberMe);
       } catch (err) {
         let msg = err.message || 'Giriş yapılamadı';
         if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
@@ -1308,6 +1323,7 @@
       const email = document.getElementById('regEmail').value.trim();
       const pass = document.getElementById('regPassword').value;
       const passConfirm = document.getElementById('regPasswordConfirm').value;
+      const rememberMe = document.getElementById('regRememberMe')?.checked !== false;
 
       alertEl.style.display = 'none';
 
@@ -1325,7 +1341,7 @@
         if (!window.firebaseDB || !window.firebaseDB.register) {
           throw new Error('Firebase başlatılıyor, lütfen birkaç saniye sonra tekrar deneyin.');
         }
-        await window.firebaseDB.register(shopName, username, email, pass);
+        await window.firebaseDB.register(shopName, username, email, pass, rememberMe);
       } catch (err) {
         let msg = err.message || 'Kayıt başarısız oldu';
         if (err.code === 'auth/email-already-in-use') {
