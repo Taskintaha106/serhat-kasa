@@ -24,6 +24,17 @@ let appState = {
 
 let activeCustomerId = null;
 
+// Performans İkon Optimizasyonu (requestAnimationFrame ile tek seferde toplu çizim)
+let _lucideRaf = null;
+function refreshIcons() {
+  if (_lucideRaf) cancelAnimationFrame(_lucideRaf);
+  _lucideRaf = requestAnimationFrame(() => {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  });
+}
+
 // ==================== BAŞLANGIÇ & YÜKLEME ====================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -31,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initClock();
   setupTabs();
   renderAll();
-  lucide.createIcons();
 });
 
 // Verileri LocalStorage'dan Çek
@@ -111,7 +121,7 @@ function setupTabs() {
       const targetContent = document.getElementById(targetId);
       if (targetContent) targetContent.classList.add('active');
       
-      lucide.createIcons();
+      refreshIcons();
     });
   });
 }
@@ -126,7 +136,7 @@ function renderAll() {
   renderFiyatTable();
   renderRaporlar();
   renderSettings();
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function formatTL(num) {
@@ -302,7 +312,7 @@ function renderKasaTable() {
     `;
   }).join('');
 
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function deleteTransaction(id) {
@@ -399,7 +409,7 @@ function renderCustomerDetail(customer) {
         <p>Hesap detaylarını ve işlem geçmişini görmek için soldan bir müşteri seçin.</p>
       </div>
     `;
-    lucide.createIcons();
+    refreshIcons();
     return;
   }
 
@@ -468,7 +478,7 @@ function renderCustomerDetail(customer) {
     </div>
   `;
 
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function openBorcEkleModal(id) {
@@ -675,7 +685,7 @@ function renderToptanciTable() {
     `;
   }).join('');
 
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function openToptanciOdemeModal(id) {
@@ -806,7 +816,7 @@ function renderFiyatTable() {
     `;
   }).join('');
 
-  lucide.createIcons();
+  refreshIcons();
 }
 
 function deletePriceItem(id) {
@@ -1031,7 +1041,7 @@ function renderInternalBackupsList() {
         <div style="font-size: 0.8rem;">Yukarıdaki "Yeni Yedek Al" butonuna basarak ilk güvenli geri dönüş noktanızı oluşturabilirsiniz.</div>
       </div>
     `;
-    lucide.createIcons();
+    refreshIcons();
     return;
   }
 
@@ -1070,7 +1080,7 @@ function renderInternalBackupsList() {
   });
 
   container.innerHTML = html;
-  lucide.createIcons();
+  refreshIcons();
 }
 
 // Seçilen Yedeğe Geri Dön
@@ -1198,7 +1208,7 @@ function showToast(message) {
   const toast = document.getElementById('toast');
   toast.innerHTML = `<i data-lucide="check-circle-2"></i> ${escapeHtml(message)}`;
   toast.style.display = 'flex';
-  lucide.createIcons();
+  refreshIcons();
   setTimeout(() => {
     toast.style.display = 'none';
   }, 3500);
@@ -1236,7 +1246,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
   const btn = document.getElementById('btnMobileInstall');
   if (btn) {
     btn.style.display = 'inline-flex';
-    lucide.createIcons();
+    refreshIcons();
   }
 });
 

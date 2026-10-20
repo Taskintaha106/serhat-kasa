@@ -34,7 +34,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -602,8 +602,7 @@ select:focus, input:focus, textarea:focus {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(2px);
+  background: rgba(15, 23, 42, 0.75);
   z-index: 999;
   align-items: center;
   justify-content: center;
@@ -849,8 +848,7 @@ select:focus, input:focus, textarea:focus {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.94);
   z-index: 10000;
   display: flex;
   align-items: center;
