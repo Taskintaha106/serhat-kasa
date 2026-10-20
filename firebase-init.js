@@ -36,6 +36,21 @@ const auth = getAuth(app);
 let currentUser = null;
 let currentShop = null;
 
+// Sayfa açıldığında mevcut yerel veriyi kontrol et ve sakla (eski sürümden geçişte veriyi korumak için)
+let preservedLocalData = null;
+try {
+  const localRaw = localStorage.getItem('serhat_insaat_kasa_v1');
+  if (localRaw) {
+    const parsed = JSON.parse(localRaw);
+    if (parsed && (parsed.transactions?.length > 0 || parsed.customers?.length > 0)) {
+      preservedLocalData = parsed;
+      console.log("📦 Mevcut yerel veriler tespit edildi, yeni dükkan kaydı için korundu.");
+    }
+  }
+} catch (e) {
+  console.warn("Yerel veri okunamadı:", e);
+}
+
 // ────── Buluta Kaydet (Giriş Yapmış Dükkana Özel) ──────
 async function saveToCloud(data) {
   if (!currentUser) return false;
@@ -76,10 +91,7 @@ async function loadFromCloud() {
       console.log("☁️ Firestore: Dükkan verisi yüklendi.");
     } else {
       console.log("☁️ Firestore: Bu dükkan için ilk kez veri oluşturuluyor...");
-      let initialData = null;
-      if (typeof window.getAppState === 'function') {
-        initialData = window.getAppState();
-      }
+      let initialData = preservedLocalData || (typeof window.getAppState === 'function' ? window.getAppState() : null);
       if (currentShop?.shopName && initialData?.settings) {
         initialData.settings.shopName = currentShop.shopName;
       }
