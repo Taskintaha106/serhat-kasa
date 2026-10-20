@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Serhat İnşaat - Kasa & Veresiye Takip</title>
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,8 +18,8 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <!-- Lucide Icons (Offline & Fast) -->
   <script src="lucide.min.js"></script>
-  <!--Custom CSS -->
-  <link rel="stylesheet" href="style.css?v=13">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
 
@@ -1110,8 +1110,8 @@
   </div>
 
   <!-- ==================== DÜKKAN GİRİŞİ & KAYIT MODALI ==================== -->
-  <div id="authModalOverlay" class="auth-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15, 23, 42, 0.94); z-index:999999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
-    <div class="auth-card" style="background:#ffffff; width:100%; max-width:460px; border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.45); overflow:hidden;">
+  <div id="authModalOverlay" class="auth-overlay" style="display:flex; position:fixed; inset:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.94); z-index:999999; align-items:center; justify-content:center; padding:12px; box-sizing:border-box; overflow-y:auto;">
+    <div class="auth-card" style="background:#ffffff; width:100%; max-width:440px; max-height:92vh; border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.45); overflow-y:auto;">
       <div class="auth-header">
         <div class="auth-logo">
           <i data-lucide="store" style="width:26px;height:26px;"></i>
@@ -1216,9 +1216,9 @@
   <div id="toast" class="toast"></div>
 
   <!-- Firebase CDN Modülü -->
-  <script type="module" src="firebase-init.js"></script>
+  <script type="module" src="firebase-init.js?v=14"></script>
   <!-- Uygulama Scripti -->
-  <script src="app.js?v=12" defer></script>
+  <script src="app.js?v=14" defer></script>
 
   <!-- Auth UI İşleyicileri -->
   <script>

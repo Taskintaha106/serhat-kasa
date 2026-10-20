@@ -415,6 +415,10 @@ function renderVeresiyeList() {
 function selectCustomer(id) {
   activeCustomerId = id;
   renderVeresiyeList();
+  if (window.innerWidth <= 768) {
+    const detailEl = document.getElementById('musteriDetailBox');
+    if (detailEl) detailEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 function renderCustomerDetail(customer) {
@@ -446,10 +450,10 @@ function renderCustomerDetail(customer) {
   }).reverse().join('');
 
   box.innerHTML = `
-    <div style="background: #fff; border-radius: var(--radius-md); padding: 20px; border: 1px solid var(--border-color);">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+    <div style="background: #fff; border-radius: var(--radius-md); padding: 16px; border: 1px solid var(--border-color);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;">
         <div>
-          <h2 style="font-size: 1.4rem; font-weight: 800;">${escapeHtml(customer.name)}</h2>
+          <h2 style="font-size: 1.3rem; font-weight: 800;">${escapeHtml(customer.name)}</h2>
           <div class="text-muted" style="margin-top: 4px;">
             ${escapeHtml(customer.occupation || 'Müşteri')} • 📞 ${escapeHtml(customer.phone || 'Telefon yok')}
           </div>
@@ -457,7 +461,7 @@ function renderCustomerDetail(customer) {
         </div>
         <div style="text-align: right;">
           <div class="text-muted text-sm">GÜNCEL TOPLAM BORÇ</div>
-          <div style="font-size: 1.8rem; font-weight: 900; color: var(--amber);">${formatTL(customer.currentBalance)}</div>
+          <div style="font-size: 1.65rem; font-weight: 900; color: var(--amber);">${formatTL(customer.currentBalance)}</div>
         </div>
       </div>
 

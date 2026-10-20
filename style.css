@@ -1284,21 +1284,495 @@ select:focus, input:focus, textarea:focus {
   font-weight: 600;
 }
 
+/* ==================== MOBİL VE TABLET TAM UYUMLULUK (RESPONSIVE) ==================== */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+.main-layout,
+.tab-content,
+.card,
+.kpi-container,
+.action-bar {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 960px) {
+  .grid-veresiye {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+  .musteri-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding-right: 0;
+    padding-bottom: 14px;
+    max-height: 280px;
+  }
+  .musteri-detail-box {
+    padding-left: 0;
+  }
+}
+
 @media (max-width: 768px) {
+  body {
+    padding: 8px 8px 28px 8px !important;
+    background-attachment: scroll;
+  }
+
+  /* 1. Mobil Üst Bar (Header) */
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+
+  .header-left {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .logo-box {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .app-header h1 {
+    font-size: 1.08rem;
+    line-height: 1.2;
+  }
+
+  .header-center {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 9px;
+    width: 100%;
+  }
+
+  .clock-display {
+    font-size: 1rem;
+  }
+
+  .date-display {
+    font-size: 0.72rem;
+  }
+
+  .header-right {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .header-user-badge {
+    grid-column: 1 / -1;
+    justify-content: center;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
+  #btnMobileInstall {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+
+  .header-right .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 8px;
+    font-size: 0.76rem;
+    white-space: nowrap;
+  }
+
+  /* 2. Mobil KPI Kartları (2x2 Kompakt Mobil Finans Görünümü) */
+  .kpi-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .kpi-card {
+    padding: 11px 10px;
+    gap: 9px;
+    border-radius: 10px;
+  }
+
+  .kpi-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .kpi-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+
+  .kpi-icon i {
+    width: 17px;
+    height: 17px;
+  }
+
+  .kpi-title {
+    font-size: 0.64rem;
+    letter-spacing: 0.02em;
+  }
+
+  .kpi-value {
+    font-size: 1.08rem;
+    margin: 1px 0;
+  }
+
+  .kpi-sub {
+    font-size: 0.66rem;
+    line-height: 1.2;
+  }
+
+  /* 3. Mobil Hızlı İşlem Butonları (2 Sütunlu Kompakt Izgara) */
+  .action-bar {
+    margin-bottom: 12px;
+  }
+
+  .action-buttons {
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+
+  .btn-action {
+    padding: 11px 8px;
+    font-size: 0.8rem;
+    gap: 6px;
+    border-radius: 10px;
+  }
+
+  .btn-action i {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  .btn-action:last-child {
+    grid-column: 1 / -1;
+  }
+
+  /* 4. Mobil Sekme Menüsü (Yatay Kaydırılabilir Hap Menü) */
+  .nav-tabs {
+    padding: 5px;
+    gap: 4px;
+    border-radius: 11px;
+    margin-bottom: 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    padding: 8px 11px;
+    font-size: 0.8rem;
+    gap: 5px;
+    border-radius: 8px;
+  }
+
+  .tab-btn i {
+    width: 15px;
+    height: 15px;
+  }
+
+  /* 5. Kartlar, Arama ve Filtre Alanları */
+  .card {
+    padding: 12px 10px;
+    border-radius: 12px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+
+  .card-header h3 {
+    font-size: 1.05rem;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .filter-group input,
+  .filter-group select,
+  .filter-group .btn {
+    width: 100% !important;
+    justify-content: center;
+  }
+
+  /* iOS/Android'de input'a tıklayınca ekranın yakınlaşıp kaymasını önlemek için 16px font */
+  select, input[type="text"], input[type="number"], input[type="tel"], input[type="email"], input[type="date"], textarea {
+    font-size: 16px !important;
+    padding: 9px 10px;
+    max-width: 100%;
+  }
+
+  /* 6. Tablolar ve Rapor Kutuları (Mobilde Kart Görünümü - Sağa Sola Kaydırma Yok) */
+  .rapor-ozet-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .rapor-kutu {
+    padding: 12px 14px;
+  }
+
+  .rapor-kutu h3 {
+    font-size: 1.25rem;
+  }
+
+  .table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: visible;
+    border: none;
+    background: transparent;
+  }
+
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table,
+  .data-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.04);
+  }
+
+  .data-table tbody td {
+    padding: 2px 0 !important;
+    font-size: 0.84rem;
+    border: none !important;
+    word-break: break-word;
+  }
+
+  .data-table tbody td[colspan] {
+    width: 100%;
+    text-align: center;
+    padding: 18px 8px !important;
+  }
+
+  /* Kasa Tablosu Mobil Kart Düzeni */
+  #kasaTableBody tr td:nth-child(4) {
+    width: 100%;
+    padding: 6px 0 !important;
+    border-top: 1px dashed #e2e8f0 !important;
+    border-bottom: 1px dashed #e2e8f0 !important;
+    margin: 2px 0;
+  }
+
+  /* Teklif Tablosu Mobil Kart Düzeni */
+  #teklifTableBody tr td:nth-child(2),
+  #teklifTableBody tr td:nth-child(3),
+  #teklifTableBody tr td:nth-child(4) {
+    width: 100%;
+  }
+  #teklifTableBody tr td:nth-child(7) {
+    width: 100%;
+    padding-top: 8px !important;
+    border-top: 1px dashed #e2e8f0 !important;
+    margin-top: 4px;
+  }
+
+  /* Toptancı Tablosu Mobil Kart Düzeni */
+  #toptanciTableBody tr td:nth-child(1),
+  #toptanciTableBody tr td:nth-child(2) {
+    width: 100%;
+  }
+  #toptanciTableBody tr td:nth-child(6) {
+    width: 100%;
+    padding-top: 8px !important;
+    border-top: 1px dashed #e2e8f0 !important;
+    margin-top: 4px;
+  }
+
+  /* Fiyat Rehberi Mobil Kart Düzeni */
+  #fiyatTableBody tr td:nth-child(1) {
+    width: 100%;
+    font-size: 0.92rem;
+  }
+
+  /* 7. Ayarlar ve Yedekler */
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  .settings-box {
+    padding: 14px 12px;
+  }
+
+  .backup-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .backup-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  /* 8. Modallar ve Formlar */
+  .modal-overlay {
+    padding: 8px;
+    align-items: center;
+  }
+
+  .modal-card,
+  .modal-card.modal-lg,
+  .modal-card.modal-xl {
+    padding: 14px 12px;
+    max-width: 100% !important;
+    max-height: 92vh;
+    overflow-y: auto;
+    border-radius: 14px;
+  }
+
+  .modal-header h3 {
+    font-size: 1.02rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .modal-footer > div {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  /* 9. Teklif Oluşturma Satırları ve Teklif Kağıdı (A4 Önizleme) */
   .teklif-row-header {
     display: none;
   }
+
   .teklif-row-item {
     grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px;
   }
+
+  .teklif-row-item > div:first-child {
+    grid-column: 1 / -1;
+  }
+
   .proposal-totals-section {
     flex-direction: column;
+    gap: 12px;
   }
+
   .proposal-totals-box {
     width: 100% !important;
   }
+
+  .proposal-paper {
+    padding: 14px 10px;
+    font-size: 0.82rem;
+    overflow-x: auto;
+  }
+
+  .proposal-doc-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .proposal-company-info h2 {
+    font-size: 1.2rem;
+  }
+
+  .proposal-meta-box {
+    text-align: left;
+    width: 100%;
+    padding: 10px 12px;
+  }
+
   .proposal-client-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .proposal-table-doc {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .proposal-table-doc th,
+  .proposal-table-doc td {
+    padding: 7px 8px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .proposal-signatures {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    margin-top: 20px;
+  }
+
+  .proposal-sig-box {
+    width: 100%;
+  }
+
+  .toast {
+    left: 12px;
+    right: 12px;
+    bottom: 14px;
+    font-size: 0.82rem;
+    padding: 10px 14px;
   }
 }
 

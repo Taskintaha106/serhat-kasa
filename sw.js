@@ -1,4 +1,4 @@
-const CACHE_NAME = 'serhat-kasa-pwa-v7';
+const CACHE_NAME = 'serhat-kasa-pwa-v8';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -34,31 +34,24 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // HTML sayfaları için Network-First: Çevrimiçiyse en güncelini çek, çevrimdışıysa önbellekten sun
-  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
+  // Tüm istekler için Network-First: İnternet varsa her zaman en güncel dosyayı çek, çevrimdışıysa önbellekten sun
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200 && event.request.method === 'GET') {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => caches.match('./index.html'))
-    );
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).catch(() => {
-        if (event.request.destination === 'document') {
-          return caches.match('./index.html');
         }
-      });
-    })
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          if (event.request.destination === 'document') {
+            return caches.match('./index.html');
+          }
+        });
+      })
   );
 });
 
