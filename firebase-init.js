@@ -38,9 +38,14 @@ async function saveToCloud(data) {
     });
     updateSyncBadge(true);
     console.log("✅ Firestore: Veri başarıyla buluta kaydedildi.");
+    return true;
   } catch (err) {
-    updateSyncBadge(false);
     console.error("❌ Firestore kayıt hatası:", err.code, err.message);
+    const msg = err.code === 'permission-denied' 
+      ? 'Firebase Güvenlik Kuralları İzni Yok (permission-denied)' 
+      : err.message;
+    updateSyncBadge(false, msg);
+    return false;
   }
 }
 
@@ -79,8 +84,11 @@ async function loadFromCloud() {
       }
     }
   } catch (err) {
-    updateSyncBadge(false);
     console.error("❌ Firestore okuma hatası:", err.code, err.message);
+    const msg = err.code === 'permission-denied' 
+      ? 'Firebase Güvenlik Kuralları İzni Yok (permission-denied)' 
+      : err.message;
+    updateSyncBadge(false, msg);
   }
 }
 
@@ -88,18 +96,24 @@ async function loadFromCloud() {
 window.manuelBulutaYukle = async function() {
   const localRaw = localStorage.getItem('serhat_insaat_kasa_v1');
   if (!localRaw) { alert('Yerel veri bulunamadı!'); return; }
-  await saveToCloud(JSON.parse(localRaw));
-  alert('✅ Veriler Firestore\'a başarıyla yüklendi!\n\nFirebase Console → Firestore → "kasa" koleksiyonu → "serhat" belgesini kontrol edin.');
+  const success = await saveToCloud(JSON.parse(localRaw));
+  if (success) {
+    alert('✅ Veriler Firestore\'a başarıyla yüklendi!\n\nFirebase Console → Firestore → "kasa" koleksiyonu → "serhat" belgesini kontrol edin.');
+  } else {
+    alert('❌ Firestore Kayıt Hatası!\n\nFirebase güvenlik kuralları yazmayı engelliyor (permission-denied).\nLütfen Firebase Console -> Firestore Database -> Rules sekmesinden okuma/yazma izinlerini güncelleyin.');
+  }
 };
 
 // ────── Senkronizasyon Rozeti ──────
-function updateSyncBadge(online) {
+function updateSyncBadge(online, errMsg = '') {
   const badge = document.querySelector('.badge-status');
   if (!badge) return;
   if (online) {
     badge.innerHTML = `<span class="status-dot" style="background:#22c55e;"></span> ☁️ Bulut Senkronize`;
+    badge.title = "Firebase Firestore ile bağlı ve senkronize";
   } else {
-    badge.innerHTML = `<span class="status-dot" style="background:#f59e0b;"></span> ⚠️ Çevrimdışı / Yerel Kayıt`;
+    badge.innerHTML = `<span class="status-dot" style="background:#ef4444;"></span> ⚠️ Bulut Bağlantı Sorunu`;
+    badge.title = errMsg || "Firebase kuralları veya ağ hatası";
   }
 }
 

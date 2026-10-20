@@ -1,9 +1,10 @@
-const CACHE_NAME = 'serhat-kasa-pwa-v1';
+const CACHE_NAME = 'serhat-kasa-pwa-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './firebase-init.js',
   './lucide.min.js',
   './manifest.json',
   './icon-192.png',
@@ -33,6 +34,20 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // HTML sayfaları için Network-First: Çevrimiçiyse en güncelini çek, çevrimdışıysa önbellekten sun
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -46,3 +61,4 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
