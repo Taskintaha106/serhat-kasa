@@ -3674,6 +3674,16 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').then((reg) => {
       console.log('PWA ServiceWorker aktif:', reg.scope);
+      reg.update();
+    });
+    let refreshingSw = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshingSw) {
+        refreshingSw = true;
+        window.location.reload();
+      }
+    });
+    Promise.resolve().then(() => {
     }).catch((err) => {
       console.log('PWA ServiceWorker hatası:', err);
     });
