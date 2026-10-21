@@ -19,166 +19,168 @@
   <!-- Lucide Icons (Offline & Fast) -->
   <script src="lucide.min.js"></script>
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css?v=18">
+  <link rel="stylesheet" href="style.css?v=35">
 </head>
 <body>
 
-  <!-- Üst Bar (Header) -->
-  <header class="app-header">
-    <div class="header-left">
-      <div class="logo-box">
-        <i data-lucide="wrench"></i>
+  <div class="app-shell">
+    <!-- SOL SABİT MENÜ (MODERN SAAS SIDEBAR) -->
+    <aside class="app-sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-box">
+          <i data-lucide="layers"></i>
+        </div>
+        <div class="brand-text">
+          <h1 id="headerShopTitle">Serhat İnşaat</h1>
+          <span class="badge-status" onclick="window.openAuthModal && window.openAuthModal()" style="cursor:pointer;" title="Dükkan girişi için tıklayın">
+            <span class="status-dot" style="background:#f59e0b;"></span> 🔒 Dükkan Girişi Yapın
+          </span>
+        </div>
       </div>
-      <div>
-        <h1 id="headerShopTitle">Serhat İnşaat</h1>
-        <span class="badge-status" onclick="window.openAuthModal && window.openAuthModal()" style="cursor:pointer;" title="Dükkan girişi için tıklayın">
-          <span class="status-dot" style="background:#f59e0b;"></span> 🔒 Dükkan Girişi Yapın
-        </span>
-      </div>
-    </div>
 
-    <div class="header-center">
-      <div id="liveClock" class="clock-display">00:00:00</div>
-      <div id="liveDate" class="date-display">...</div>
-    </div>
+      <!-- Dikey Navigasyon Menüsü -->
+      <nav class="nav-tabs">
+        <div class="nav-group-label">FİNANS & CARİ</div>
+        <button class="tab-btn active" data-tab="tab-kasa" data-title="Genel Bakış & Kasa" data-sub="Günlük nakit, POS, veresiye özeti ve kasa hareketleri">
+          <i data-lucide="layout-dashboard"></i> <span>Genel Bakış & Kasa</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-veresiye" data-title="Veresiye Defteri" data-sub="Usta ve müşteri açık hesap bakiyeleri ve tahsilat takibi">
+          <i data-lucide="users"></i> <span>Veresiye Defteri</span>
+          <span id="badgeVeresiyeCount" class="tab-badge">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-toptanci" data-title="Toptancı & Tedarikçiler" data-sub="Mal alınan firmalar, faturalar ve ödenecek borçlar">
+          <i data-lucide="truck"></i> <span>Toptancı & Borçlar</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-rapor" data-title="Kasa & Kâr-Zarar Raporları" data-sub="Aylık finansal performans, tahsilat ve gider analizi">
+          <i data-lucide="bar-chart-3"></i> <span>Finansal Raporlar</span>
+        </button>
 
-    <div class="header-right">
-      <div id="userProfileBadge" class="header-user-badge" style="display:none;">
-        <i data-lucide="store" style="width:15px;height:15px;color:#60a5fa;"></i>
-        <span id="headerUsernameText">Dükkan</span>
-      </div>
-      <button id="btnMobileInstall" class="btn btn-header-amber" style="display:none;" onclick="installMobileApp()" title="Uygulamayı telefonunuza yükleyin">
-        <i data-lucide="smartphone"></i> Telefona Yükle
-      </button>
-      <button class="btn btn-header-glass" onclick="createInternalBackup()" title="Uygulama içine anlık yedek noktası kaydeder (Dosya indirmez)">
-        <i data-lucide="shield-check"></i> Hızlı Yedek Al
-      </button>
-      <button class="btn btn-header-cyan" onclick="manuelBulutaYukle && manuelBulutaYukle()" title="Tüm verileri şimdi Firestore bulutuna yükle">
-        <i data-lucide="cloud-upload"></i> Buluta Yükle
-      </button>
-      <button class="btn btn-header-primary" onclick="openGunSonuModal()" title="Bugünkü ciroyu ve kasayı kapat">
-        <i data-lucide="calendar-check"></i> Gün Sonu Kapat
-      </button>
-      <button id="btnLogout" class="btn btn-header-danger" style="display:none;" onclick="firebaseDB.logout()" title="Oturumu Kapat">
-        <i data-lucide="log-out"></i> Çıkış
-      </button>
-    </div>
-  </header>
+        <div class="nav-group-label">SATIŞ & MÜHENDİSLİK</div>
+        <button class="tab-btn" data-tab="tab-teklif" data-title="Fiyat Teklifleri" data-sub="Müşteri ve şantiyelere özel fiyat teklifi hazırlama ve takip">
+          <i data-lucide="file-spreadsheet"></i> <span>Fiyat Teklifleri</span>
+          <span id="badgeTeklifCount" class="tab-badge" style="background:#6366f1; display:none;">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-metraj" data-title="Metraj & Sarfiyat Hesaplayıcı" data-sub="Oda/şantiye ölçüsünden otomatik malzeme reçetesi ve maliyet hesabı">
+          <i data-lucide="calculator"></i> <span>Ne Kadar Gider?</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-fiyat" data-title="Hızlı Fiyat & Ürün Rehberi" data-sub="Malzeme alış/satış fiyatları ve kâr marjı listesi">
+          <i data-lucide="tag"></i> <span>Fiyat Rehberi</span>
+        </button>
 
-  <!-- Ana İstatistik Kartları (KPIs) -->
-  <section class="kpi-container">
-    <div class="kpi-card border-green">
-      <div class="kpi-icon bg-green-light text-green">
-        <i data-lucide="banknote"></i>
-      </div>
-      <div class="kpi-info">
-        <span class="kpi-title">Kasadaki Nakit</span>
-        <h2 id="kpiNakitKasa" class="kpi-value text-green">₺0,00</h2>
-        <span class="kpi-sub">Fiziksel çekmecedeki para</span>
-      </div>
-    </div>
+        <div class="nav-group-label">YÖNETİM</div>
+        <button class="tab-btn" data-tab="tab-ayarlar" data-title="Dükkan Ayarları & Yedekleme" data-sub="İşletme bilgileri ve otomatik bulut/cihaz yedekleme noktaları">
+          <i data-lucide="settings"></i> <span>Ayarlar & Yedek</span>
+        </button>
+      </nav>
 
-    <div class="kpi-card border-blue">
-      <div class="kpi-icon bg-blue-light text-blue">
-        <i data-lucide="credit-card"></i>
-      </div>
-      <div class="kpi-info">
-        <span class="kpi-title">Banka / POS Kasa</span>
-        <h2 id="kpiBankaKasa" class="kpi-value text-blue">₺0,00</h2>
-        <span class="kpi-sub">Kartlı çekim bakiyesi</span>
-      </div>
-    </div>
+      <!-- Sol Menü Alt Bilgi & Kullanıcı Alanı -->
+      <div class="sidebar-footer">
+        <div class="sidebar-clock-box">
+          <div id="liveClock" class="clock-display">00:00:00</div>
+          <div id="liveDate" class="date-display">...</div>
+        </div>
 
-    <div class="kpi-card border-amber">
-      <div class="kpi-icon bg-amber-light text-amber">
-        <i data-lucide="book-open"></i>
+        <div class="sidebar-user-actions">
+          <div id="userProfileBadge" class="header-user-badge" style="display:none;">
+            <i data-lucide="store" style="width:15px;height:15px;color:#818cf8;"></i>
+            <span id="headerUsernameText">Dükkan</span>
+          </div>
+          <button id="btnMobileInstall" class="btn btn-header-amber" style="display:none; width:100%; justify-content:center;" onclick="installMobileApp()" title="Uygulamayı telefonunuza yükleyin">
+            <i data-lucide="smartphone"></i> Telefona Yükle
+          </button>
+          <button id="btnLogout" class="btn btn-header-danger" style="display:none;" onclick="firebaseDB.logout()" title="Oturumu Kapat">
+            <i data-lucide="log-out"></i> Çıkış
+          </button>
+        </div>
       </div>
-      <div class="kpi-info">
-        <span class="kpi-title">Piyasa Alacağı (Veresiye)</span>
-        <h2 id="kpiVeresiyeAlacak" class="kpi-value text-amber">₺0,00</h2>
-        <span class="kpi-sub">Müşterilerden beklenen</span>
-      </div>
-    </div>
+    </aside>
 
-    <div class="kpi-card border-red">
-      <div class="kpi-icon bg-red-light text-red">
-        <i data-lucide="truck"></i>
-      </div>
-      <div class="kpi-info">
-        <span class="kpi-title">Toptancı Borçları</span>
-        <h2 id="kpiToptanciBorc" class="kpi-value text-red">₺0,00</h2>
-        <span class="kpi-sub">Ödenecek faturalar</span>
-      </div>
-    </div>
+    <!-- SAĞ ANA ÇALIŞMA ALANI (WORKSPACE) -->
+    <main class="main-layout">
+      <!-- Üst Çalışma Çubuğu (Workspace Header & Quick Actions) -->
+      <header class="workspace-topbar">
+        <div class="workspace-title-area">
+          <h2 id="workspacePageTitle">Genel Bakış & Kasa</h2>
+          <p id="workspacePageSub">Günlük nakit, POS, veresiye özeti ve kasa hareketleri</p>
+        </div>
 
-    <div class="kpi-card border-purple">
-      <div class="kpi-icon bg-purple-light text-purple">
-        <i data-lucide="trending-up"></i>
-      </div>
-      <div class="kpi-info">
-        <span class="kpi-title">Bugünkü Ciro</span>
-        <h2 id="kpiBugunCiro" class="kpi-value text-purple">₺0,00</h2>
-        <span id="kpiBugunNetKar" class="kpi-sub font-semibold">Net Kâr: ₺0,00</span>
-      </div>
-    </div>
-  </section>
+        <div class="action-buttons">
+          <button class="btn btn-action btn-gelir" onclick="openModal('gelirModal')">
+            <i data-lucide="plus"></i> Satış Ekle
+          </button>
+          <button class="btn btn-action btn-gider" onclick="openModal('giderModal')">
+            <i data-lucide="minus"></i> Gider Ekle
+          </button>
+          <button class="btn btn-action btn-gunsonu" onclick="openGunSonuModal()" title="Bugünkü ciroyu ve kasayı kapat">
+            <i data-lucide="calendar-check"></i> Gün Sonu
+          </button>
+          <button type="button" id="btnThemeToggle" class="btn btn-action btn-theme-toggle" onclick="toggleTheme()" title="Gece / Gündüz Temasını Değiştir">
+            <i data-lucide="moon" id="themeToggleIcon"></i> <span id="themeToggleText">Koyu Tema</span>
+          </button>
+        </div>
+      </header>
 
-  <!-- Hızlı İşlem Eylem Çubuğu -->
-  <section class="action-bar">
-    <div class="action-buttons">
-      <button class="btn btn-action btn-gelir" onclick="openModal('gelirModal')">
-        <i data-lucide="plus-circle"></i> + Satış / Gelir Ekle
-      </button>
-      <button class="btn btn-action btn-gider" onclick="openModal('giderModal')">
-        <i data-lucide="minus-circle"></i> - Masraf / Gider Ekle
-      </button>
-      <button class="btn btn-action btn-veresiye" onclick="openModal('veresiyeModal')">
-        <i data-lucide="user-plus"></i> Usta / Veresiye Kaydı
-      </button>
-      <button class="btn btn-action btn-teklif" onclick="openProposalModal()">
-        <i data-lucide="file-spreadsheet"></i> + Fiyat Teklifi Hazırla
-      </button>
-      <button class="btn btn-action btn-toptanci" onclick="openModal('toptanciModal')">
-        <i data-lucide="receipt"></i> Toptancı / Mal Alımı
-      </button>
-    </div>
-  </section>
+      <!-- SEKME 1: Kasa & Günlük Hareketler -->
+      <section id="tab-kasa" class="tab-content active">
+        <!-- Ana İstatistik Kartları (Sadece Kasa & Genel Bakış Sekmesinde Görünür) -->
+        <div class="kpi-container">
+          <div class="kpi-card border-green">
+            <div class="kpi-icon bg-green-light text-green">
+              <i data-lucide="banknote"></i>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-title">Kasadaki Nakit</span>
+              <h2 id="kpiNakitKasa" class="kpi-value text-green">₺0,00</h2>
+              <span class="kpi-sub">Fiziksel çekmecedeki para</span>
+            </div>
+          </div>
 
-  <!-- Ana İçerik ve Sekmeler -->
-  <main class="main-layout">
-    <!-- Sol / Üst Sekme Başlıkları -->
-    <nav class="nav-tabs">
-      <button class="tab-btn active" data-tab="tab-kasa">
-        <i data-lucide="wallet"></i> Kasa Hareketleri
-      </button>
-      <button class="tab-btn" data-tab="tab-veresiye">
-        <i data-lucide="users"></i> Veresiye Defteri
-        <span id="badgeVeresiyeCount" class="tab-badge">0</span>
-      </button>
-      <button class="tab-btn" data-tab="tab-teklif">
-        <i data-lucide="file-spreadsheet"></i> Teklifler & Fiyatlandırma
-        <span id="badgeTeklifCount" class="tab-badge" style="background:#2563eb; display:none;">0</span>
-      </button>
-      <button class="tab-btn" data-tab="tab-metraj">
-        <i data-lucide="calculator"></i> Ne Kadar Gider? (Metraj)
-      </button>
-      <button class="tab-btn" data-tab="tab-toptanci">
-        <i data-lucide="factory"></i> Toptancı & Tedarikçiler
-      </button>
-      <button class="tab-btn" data-tab="tab-fiyat">
-        <i data-lucide="tag"></i> Hızlı Fiyat Rehberi
-      </button>
-      <button class="tab-btn" data-tab="tab-rapor">
-        <i data-lucide="bar-chart-3"></i> Kasa Raporları
-      </button>
-      <button class="tab-btn" data-tab="tab-ayarlar">
-        <i data-lucide="settings"></i> Ayarlar & Yedek
-      </button>
-    </nav>
+          <div class="kpi-card border-blue">
+            <div class="kpi-icon bg-blue-light text-blue">
+              <i data-lucide="credit-card"></i>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-title">Banka / POS Kasa</span>
+              <h2 id="kpiBankaKasa" class="kpi-value text-blue">₺0,00</h2>
+              <span class="kpi-sub">Kartlı çekim bakiyesi</span>
+            </div>
+          </div>
 
-    <!-- SEKME 1: Kasa & Günlük Hareketler -->
-    <section id="tab-kasa" class="tab-content active">
-      <div class="card">
+          <div class="kpi-card border-amber">
+            <div class="kpi-icon bg-amber-light text-amber">
+              <i data-lucide="book-open"></i>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-title">Piyasa Alacağı (Veresiye)</span>
+              <h2 id="kpiVeresiyeAlacak" class="kpi-value text-amber">₺0,00</h2>
+              <span class="kpi-sub">Müşterilerden beklenen</span>
+            </div>
+          </div>
+
+          <div class="kpi-card border-red">
+            <div class="kpi-icon bg-red-light text-red">
+              <i data-lucide="truck"></i>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-title">Toptancı Borçları</span>
+              <h2 id="kpiToptanciBorc" class="kpi-value text-red">₺0,00</h2>
+              <span class="kpi-sub">Ödenecek faturalar</span>
+            </div>
+          </div>
+
+          <div class="kpi-card border-purple">
+            <div class="kpi-icon bg-purple-light text-purple">
+              <i data-lucide="trending-up"></i>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-title">Bugünkü Ciro</span>
+              <h2 id="kpiBugunCiro" class="kpi-value text-purple">₺0,00</h2>
+              <span id="kpiBugunNetKar" class="kpi-sub font-semibold">Net Kâr: ₺0,00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
         <div class="card-header">
           <div>
             <h3>Kasa Hareketleri ve Gelir-Gider Dökümü</h3>
@@ -401,16 +403,17 @@
           </div>
 
           <div class="settings-box">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px; gap: 10px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px; gap: 10px; flex-wrap:wrap;">
               <div>
-                <h4><i data-lucide="shield-check" style="vertical-align: middle; color: var(--primary);"></i> Uygulama İçi Yedekler (Geri Dönüş Noktaları)</h4>
+                <h4><i data-lucide="shield-check" style="vertical-align: middle; color: var(--primary);"></i> Otomatik Anlık Yedekler (Geri Dönüş Noktaları)</h4>
                 <p class="text-muted text-sm" style="margin-top: 4px;">
-                  Yedek aldığınızda dosya indirilmez; güvenle uygulama içinde saklanır. İstediğiniz an geçmiş bir yedek noktasına tek tıkla geri dönebilirsiniz.
+                  Yaptığınız her işlem anında hem buluta hem de uygulama içine otomatik yedeklenir. İstediğiniz an geçmiş bir yedek noktasına tek tıkla geri dönebilirsiniz.
                 </p>
               </div>
-              <button class="btn btn-primary" onclick="createInternalBackup()" style="white-space:nowrap;">
-                <i data-lucide="plus-circle"></i> Yeni Yedek Al
-              </button>
+              <span style="display:inline-flex; align-items:center; gap:6px; background:#dcfce7; color:#15803d; font-weight:600; font-size:0.8rem; padding:6px 12px; border-radius:20px; white-space:nowrap;">
+                <span style="width:8px; height:8px; background:#16a34a; border-radius:50%; display:inline-block;"></span>
+                Anlık Otomatik Yedekleme Aktif
+              </span>
             </div>
 
             <!-- Kayıtlı Yedekler Listesi -->
@@ -589,6 +592,7 @@
       </div>
     </section>
   </main>
+  </div>
 
   <!-- ================= MODALLAR ================= -->
 
@@ -1205,10 +1209,9 @@
     </div>
   </div>
 
-  <!-- ==================== DÜKKAN GİRİŞİ & KAYIT MODALI ==================== -->
-  <div id="authModalOverlay" class="auth-overlay" style="display:none; position:fixed; inset:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.85); z-index:999999; align-items:center; justify-content:center; padding:12px; box-sizing:border-box; overflow-y:auto;" onclick="if(event.target===this) this.style.display='none';">
-    <div class="auth-card" style="position:relative; background:#ffffff; width:100%; max-width:440px; max-height:92vh; border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.45); overflow-y:auto;">
-      <button type="button" class="modal-close" style="position:absolute; top:14px; right:16px; background:transparent; border:none; font-size:26px; cursor:pointer; color:#64748b; line-height:1; z-index:10;" onclick="document.getElementById('authModalOverlay').style.display='none'" title="Kapat">&times;</button>
+  <!-- ==================== ZORUNLU DÜKKAN GİRİŞİ & KAYIT EKRANI ==================== -->
+  <div id="authModalOverlay" class="auth-overlay" style="display:none; position:fixed; inset:0; width:100%; height:100%; background:radial-gradient(circle at 50% 15%, #1e293b 0%, #090d16 100%); z-index:999999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box; overflow-y:auto;">
+    <div class="auth-card" style="position:relative; background:#ffffff; width:100%; max-width:440px; max-height:92vh; border-radius:20px; box-shadow:0 25px 60px -12px rgba(0,0,0,0.65); overflow-y:auto; border:1px solid rgba(255,255,255,0.12);">
       <div class="auth-header">
         <div class="auth-logo">
           <i data-lucide="store" style="width:26px;height:26px;"></i>
@@ -1242,25 +1245,19 @@
               <span>Şifre</span>
               <a href="javascript:void(0)" class="auth-forgot-link" onclick="switchAuthTab('forgot')">Şifremi Unuttum?</a>
             </label>
-            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="off">
           </div>
 
           <div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; padding:10px 12px; border-radius:8px; border:1px solid #e2e8f0;">
             <label for="loginRememberMe" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0; font-size:0.86rem; color:#0f172a; font-weight:600; width:100%;">
               <input type="checkbox" id="loginRememberMe" checked style="width:18px; height:18px; accent-color:#2563eb; cursor:pointer; margin:0;">
-              <span>Beni Hatırla <small style="font-weight:normal; color:#64748b;">(Her girişte şifre sorma)</small></span>
+              <span>Beni Hatırla <small style="font-weight:normal; color:#64748b;">(Oturumu açık tut, çıkışta kullanıcı adımı hatırla)</small></span>
             </label>
           </div>
 
-          <button type="submit" id="btnLoginSubmit" class="btn-auth btn-primary" style="background:#2563eb; color:#fff; width:100%; margin-top:4px;">
+          <button type="submit" id="btnLoginSubmit" class="btn-auth btn-primary" style="background:linear-gradient(135deg, #4f46e5 0%, #2563eb 100%); color:#fff; width:100%; margin-top:6px;">
             <i data-lucide="log-in"></i> Dükkana Giriş Yap
           </button>
-
-          <div style="text-align:center; margin-top:10px;">
-            <button type="button" class="btn-link" style="background:none; border:none; color:#64748b; font-size:0.85rem; text-decoration:underline; cursor:pointer;" onclick="document.getElementById('authModalOverlay').style.display='none'">
-              Yerel / Çevrimdışı Olarak Devam Et (Giriş Yapmadan Kullan)
-            </button>
-          </div>
         </form>
 
         <!-- 2. KAYIT FORMU -->
@@ -1299,15 +1296,9 @@
             </label>
           </div>
 
-          <button type="submit" id="btnRegSubmit" class="btn-auth btn-success" style="background:#16a34a; color:#fff; width:100%; margin-top:4px;">
+          <button type="submit" id="btnRegSubmit" class="btn-auth btn-success" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; width:100%; margin-top:6px;">
             <i data-lucide="store"></i> Dükkanımı Kaydet ve Başla
           </button>
-
-          <div style="text-align:center; margin-top:10px;">
-            <button type="button" class="btn-link" style="background:none; border:none; color:#64748b; font-size:0.85rem; text-decoration:underline; cursor:pointer;" onclick="document.getElementById('authModalOverlay').style.display='none'">
-              Vazgeç ve Çevrimdışı Devam Et
-            </button>
-          </div>
         </form>
 
         <!-- 3. ŞİFREMİ UNUTTUM FORMU -->
@@ -1339,9 +1330,9 @@
   <div id="toast" class="toast"></div>
 
   <!-- Firebase CDN Modülü -->
-  <script type="module" src="firebase-init.js?v=15"></script>
+  <script type="module" src="firebase-init.js?v=35"></script>
   <!-- Uygulama Scripti -->
-  <script src="app.js?v=18" defer></script>
+  <script src="app.js?v=35" defer></script>
 
   <!-- Auth UI İşleyicileri -->
   <script>

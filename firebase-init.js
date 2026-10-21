@@ -37,19 +37,17 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 const REMEMBER_KEY = 'serhat_kasa_remember_auth_v1';
+const SESSION_UNLOCK_KEY = 'serhat_kasa_session_unlocked_v1';
 let currentUser = null;
 let currentShop = null;
-let autoLoginAttempted = false;
 
-function saveRememberedCredentials(identifier, email, password, remember) {
+function saveRememberedCredentials(identifier, email, _password, remember) {
   try {
     if (remember) {
       const payload = {
         identifier: identifier.trim(),
         email: email.trim().toLowerCase(),
-        passB64: btoa(unescape(encodeURIComponent(password))),
         remember: true,
-        autoLogin: true,
         savedAt: new Date().toISOString()
       };
       localStorage.setItem(REMEMBER_KEY, JSON.stringify(payload));
@@ -57,7 +55,7 @@ function saveRememberedCredentials(identifier, email, password, remember) {
       localStorage.removeItem(REMEMBER_KEY);
     }
   } catch (e) {
-    console.warn("Beni hatırla kaydı yapılamadı:", e);
+    console.warn("Kullanıcı adı kaydı yapılamadı:", e);
   }
 }
 
@@ -66,11 +64,14 @@ function getRememberedCredentials() {
     const raw = localStorage.getItem(REMEMBER_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed && parsed.remember && parsed.email && parsed.passB64) {
-      return {
-        ...parsed,
-        password: decodeURIComponent(escape(atob(parsed.passB64)))
-      };
+    // Eski sürümden kalma şifre varsa güvenlik için temizle
+    if (parsed && parsed.passB64) {
+      delete parsed.passB64;
+      delete parsed.autoLogin;
+      localStorage.setItem(REMEMBER_KEY, JSON.stringify(parsed));
+    }
+    if (parsed && parsed.remember && (parsed.identifier || parsed.email)) {
+      return parsed;
     }
   } catch (e) {}
   return null;
@@ -78,13 +79,21 @@ function getRememberedCredentials() {
 
 function prefillLoginInputs() {
   const saved = getRememberedCredentials();
-  if (!saved) return;
   const idInput = document.getElementById('loginIdentifier');
   const passInput = document.getElementById('loginPassword');
   const remCheck = document.getElementById('loginRememberMe');
-  if (idInput && !idInput.value) idInput.value = saved.identifier || saved.email;
-  if (passInput && !passInput.value && saved.password) passInput.value = saved.password;
-  if (remCheck) remCheck.checked = true;
+
+  if (passInput) {
+    passInput.value = '';
+  }
+
+  if (saved) {
+    if (idInput) idInput.value = saved.identifier || saved.email;
+    if (remCheck) remCheck.checked = true;
+    if (passInput) setTimeout(() => passInput.focus(), 80);
+  } else {
+    if (idInput) setTimeout(() => idInput.focus(), 80);
+  }
 }
 
 if (document.readyState === 'loading') {
@@ -263,14 +272,7 @@ async function resetShopPassword(identifier) {
 
 // 4. Çıkış Yap
 async function logoutShop() {
-  try {
-    const raw = localStorage.getItem(REMEMBER_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      parsed.autoLogin = false;
-      localStorage.setItem(REMEMBER_KEY, JSON.stringify(parsed));
-    }
-  } catch (e) {}
+  sessionStorage.removeItem(SESSION_UNLOCK_KEY);
   await signOut(auth);
   const authModal = document.getElementById('authModalOverlay');
   if (authModal) authModal.style.display = 'flex';
@@ -284,11 +286,12 @@ function updateSyncBadge(status, customMsg = '') {
   badge.style.cursor = 'pointer';
 
   if (status === 'online' || status === true) {
-    badge.innerHTML = `<span class="status-dot" style="background:#22c55e;"></span> ☁️ Bulut Senkronize`;
-    badge.title = "Firebase Firestore ile bağlı ve senkronize";
+    const timeStr = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    badge.innerHTML = `<span class="status-dot" style="background:#22c55e;"></span><span>Bulut Aktif (${timeStr})</span>`;
+    badge.title = "Tüm verileriniz anlık olarak buluta ve cihazınıza otomatik yedekleniyor";
     badge.onclick = null;
   } else if (status === 'unauth') {
-    badge.innerHTML = `<span class="status-dot" style="background:#f59e0b;"></span> 🔒 Dükkan Girişi Yapın`;
+    badge.innerHTML = `<span class="status-dot" style="background:#f59e0b;"></span><span>Dükkan Girişi Yapın</span>`;
     badge.title = "Dükkanınıza giriş yapmak için tıklayın";
     badge.onclick = () => window.openAuthModal && window.openAuthModal();
   } else {
@@ -301,6 +304,7 @@ function updateSyncBadge(status, customMsg = '') {
 // ────── AUTH DURUM DEĞİŞİMİ DİNLEYİCİSİ ──────
 onAuthStateChanged(auth, async (user) => {
   const authModal = document.getElementById('authModalOverlay');
+  const appShell = document.querySelector('.app-shell');
   const userBadge = document.getElementById('userProfileBadge');
   const btnLogout = document.getElementById('btnLogout');
   const shopTitle = document.getElementById('headerShopTitle');
@@ -309,6 +313,11 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
     if (authModal) authModal.style.display = 'none';
+    if (appShell) {
+      appShell.style.pointerEvents = 'auto';
+      appShell.style.userSelect = 'auto';
+      appShell.style.filter = 'none';
+    }
     if (userBadge) userBadge.style.display = 'inline-flex';
     if (btnLogout) btnLogout.style.display = 'inline-flex';
 
@@ -327,24 +336,16 @@ onAuthStateChanged(auth, async (user) => {
     updateSyncBadge('online');
     await loadFromCloud();
   } else {
-    // Eğer "Beni Hatırla" ile kayıtlı oturum varsa arka planda sessizce otomatik giriş yap (Şifre ekranını hiç gösterme!)
-    const saved = getRememberedCredentials();
-    if (saved && saved.autoLogin && !autoLoginAttempted) {
-      autoLoginAttempted = true;
-      try {
-        await setPersistence(auth, browserLocalPersistence);
-        await signInWithEmailAndPassword(auth, saved.email, saved.password);
-        return;
-      } catch (autoErr) {
-        console.warn("Otomatik giriş başarısız oldu:", autoErr);
-      }
-    }
-
     currentUser = null;
     currentShop = null;
 
     prefillLoginInputs();
     if (authModal) authModal.style.display = 'flex';
+    if (appShell) {
+      appShell.style.pointerEvents = 'none';
+      appShell.style.userSelect = 'none';
+      appShell.style.filter = 'blur(8px)';
+    }
     if (userBadge) userBadge.style.display = 'none';
     if (btnLogout) btnLogout.style.display = 'none';
 

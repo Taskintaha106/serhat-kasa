@@ -41,6 +41,7 @@ function refreshIcons() {
 
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
+  initTheme();
   initClock();
   setupTabs();
   initMetrajCalculator();
@@ -68,6 +69,7 @@ function saveData() {
   const now = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
   localStorage.setItem(STORAGE_KEY + '_time', now);
+  autoSnapshotOnSave();
   renderAll();
   // Firebase Firestore'a bulut yedeği al
   if (window.firebaseDB && window.firebaseDB.save) {
@@ -125,6 +127,10 @@ function setupTabs() {
       const targetId = btn.getAttribute('data-tab');
       const targetContent = document.getElementById(targetId);
       if (targetContent) targetContent.classList.add('active');
+      const pageTitleEl = document.getElementById('workspacePageTitle');
+      const pageSubEl = document.getElementById('workspacePageSub');
+      if (pageTitleEl && btn.getAttribute('data-title')) pageTitleEl.textContent = btn.getAttribute('data-title');
+      if (pageSubEl && btn.getAttribute('data-sub')) pageSubEl.textContent = btn.getAttribute('data-sub');
       
       refreshIcons();
     });
@@ -335,6 +341,7 @@ function renderKasaTable() {
 
 function deleteTransaction(id) {
   if (!confirm('Bu kasa kaydını silmek istediğinize emin misiniz?')) return;
+  createInternalBackup('Kasa Kaydı Silme Öncesi Otomatik Yedek', true);
   appState.transactions = appState.transactions.filter(t => t.id !== id);
   saveData();
   showToast('Kasa hareketi silindi.');
@@ -604,6 +611,7 @@ function deleteCustomer(id) {
   if (!c) return;
   if (!confirm(`${c.name} isimli müşteriyi ve tüm hesap dökümünü silmek istediğinize emin misiniz?`)) return;
 
+  createInternalBackup(`Müşteri Silme Öncesi (${c.name})`, true);
   appState.customers = appState.customers.filter(item => item.id !== id);
   activeCustomerId = null;
   saveData();
@@ -754,6 +762,7 @@ function deleteSupplier(id) {
   const s = appState.suppliers.find(item => item.id === id);
   if (!s) return;
   if (!confirm(`${s.company} toptancısını ve tüm kayıtlarını silmek istediğinize emin misiniz?`)) return;
+  createInternalBackup(`Toptancı Silme Öncesi (${s.company})`, true);
   appState.suppliers = appState.suppliers.filter(item => item.id !== id);
   saveData();
   showToast('Toptancı silindi.');
@@ -1735,6 +1744,7 @@ function buildProposalShareText(prop) {
   const shopPhone = appState.settings?.phone ? ` (${appState.settings.phone})` : '';
   const dateStr = prop.date ? new Date(prop.date).toLocaleDateString('tr-TR') : '';
 
+  if (typeof prop === 'undefined') return buildMetrajShareTextWithPrices(shopName, cleanTitle);
   let text = '========================================\n';
   text += `${shopName.toUpperCase()} - FİYAT TEKLİFİ\n`;
   text += '========================================\n';
@@ -1781,6 +1791,7 @@ function buildProposalHTMLTable(prop) {
   const shopPhone = appState.settings?.phone ? ` (${appState.settings.phone})` : '';
   const dateStr = prop.date ? new Date(prop.date).toLocaleDateString('tr-TR') : '';
 
+  if (typeof prop === 'undefined') return buildMetrajHTMLTableWithPrices(shopName, cleanTitle);
   let rows = '';
   (prop.items || []).forEach((item, i) => {
     const discStr = item.discount > 0 ? ` <span style="color:#d97706; font-size:11px;">(%${item.discount} İsk.)</span>` : '';
@@ -2067,7 +2078,7 @@ function renderMetrajInputs() {
   const container = document.getElementById('metrajInputContainer');
   if (!container) return;
 
-  if (activeMetrajCategory === 'pvc_tavan') {
+  if (activeMetrajCategory === 'pvc_tavan') { return renderStandardPvcInputs(container); } if (false) {
     container.innerHTML = `
       <h4><i data-lucide="layout-grid"></i> 60x60 PVC / Karolam Asma Tavan</h4>
 
@@ -2121,6 +2132,7 @@ function renderMetrajInputs() {
       <div class="form-group">
         <label>Tavan Plaka Türü</label>
         <select id="calcPvcPlateType" onchange="calculateMetraj()">
+          <option value="60x60 Plastik Tavan Yıldız" selected>60x60 Plastik Tavan Yıldız</option>
           <option value="60x60 PVC / Karolam Asma Tavan Plakası">60x60 PVC / Karolam Plaka (Silinebilir)</option>
           <option value="60x60 Tam PVC Banyo/WC Tavan Plakası">60x60 Tam PVC Plaka (Neme/Suya Dayanıklı)</option>
           <option value="60x60 Taşyünü Akustik Tavan Plakası">60x60 Taşyünü Akustik Tavan Plakası</option>
@@ -2424,7 +2436,13 @@ function calculateMetraj() {
       }
     );
 
-    tipHtml = "<strong>Usta & Nalbur Standardi (1 Paket = 20 Adet = 7,20 m2):</strong> Her 1 Paket (20 Adet) 60x60 tavan plakasi icin standart olarak 2 Boy Ana Tasiyici (3.60m), 10 Adet Uzun Tali (1.20m), 10 Adet Kisa Tali (0.60m), oda cevresine gore 3-4 Boy L Kosebent (3.00m) ve 5er Adet Aski Teli / Yay / Celik Dubel verilir.";
+    const pvcNew = computeStandardPvcTavan(effectiveArea, area, perimeter, packSize, packAreaM2, plateType, wastePct);
+    items.length = 0;
+    pvcNew.items.forEach(x => items.push(x));
+    title = pvcNew.title;
+    subtitle = pvcNew.subtitle;
+    summaryCardsHtml = pvcNew.summaryCardsHtml;
+    tipHtml = pvcNew.tipHtml;
 
   } else if (activeMetrajCategory === "alcipan") {
     const area = Math.max(1, parseFloat(document.getElementById("calcAlcipanArea")?.value) || 0);
@@ -2659,7 +2677,8 @@ function calculateMetraj() {
   }
 
   if (listEl) {
-    listEl.innerHTML = items.map(it => `
+    renderMetrajItemsTable(listEl, items);
+    if (false) listEl.innerHTML = items.map(it => `
       <div class="metraj-item-card">
         <div class="metraj-item-info">
           <strong>${escapeHtml(it.name)}</strong>
@@ -2698,14 +2717,14 @@ function transferMetrajToProposal() {
     return alert('Önce malzeme hesaplaması yapın.');
   }
 
-  openProposalModal();
+  return transferMetrajToProposalM2();
   const container = document.getElementById('propRowsContainer');
   if (!container) return;
 
   container.innerHTML = '';
 
   currentMetrajCalculated.items.forEach(item => {
-    const autoPrice = findMatchingPriceForMetrajItem(item.name);
+    const autoPrice = item.unitPrice !== undefined ? Number(item.unitPrice) : findMatchingPriceForMetrajItem(item.name);
     addProposalRow({
       name: item.name,
       qty: item.qty,
@@ -2730,6 +2749,7 @@ function buildMetrajShareText() {
   const shopName = appState.settings?.shopName || 'Serhat İnşaat';
   const cleanTitle = (currentMetrajCalculated.title || 'Malzeme Hesabı').replace(/^[^\s\w]+/, '').trim();
 
+  if (typeof prop === 'undefined') return buildMetrajShareTextWithPrices(shopName, cleanTitle);
   let text = '========================================\n';
   text += `${shopName.toUpperCase()} - MALZEME SARFİYAT LİSTESİ\n`;
   text += '========================================\n';
@@ -2760,6 +2780,7 @@ function buildMetrajHTMLTable() {
   const shopName = appState.settings?.shopName || 'Serhat İnşaat';
   const cleanTitle = (currentMetrajCalculated.title || 'Malzeme Hesabı').replace(/^[^\s\w]+/, '').trim();
 
+  if (typeof prop === 'undefined') return buildMetrajHTMLTableWithPrices(shopName, cleanTitle);
   let rows = '';
   (currentMetrajCalculated.items || []).forEach((it, idx) => {
     const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
@@ -2890,6 +2911,501 @@ function saveInternalBackups(backupsList) {
   localStorage.setItem(BACKUPS_STORAGE_KEY, JSON.stringify(backupsList));
 }
 
+// Her işlemde anlık otomatik yedek noktası oluşturur / günceller
+function autoSnapshotOnSave() {
+  try {
+    const backups = getInternalBackups();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    let nakit = 0;
+    (appState.transactions || []).forEach(t => {
+      if (t.kasa === 'nakit') {
+        if (t.type === 'gelir') nakit += Number(t.amount);
+        if (t.type === 'gider') nakit -= Number(t.amount);
+      }
+    });
+
+    const latest = backups[0];
+    const fifteenMins = 15 * 60 * 1000;
+    const isRecentAuto = latest &&
+      latest.title &&
+      latest.title.startsWith('Otomatik Anlık Yedek') &&
+      (now.getTime() - new Date(latest.timestamp).getTime() < fifteenMins);
+
+    if (isRecentAuto) {
+      latest.timestamp = now.toISOString();
+      latest.dateFormatted = `${dateStr} ${timeStr}`;
+      latest.title = `Otomatik Anlık Yedek (${timeStr})`;
+      latest.stats = {
+        txCount: appState.transactions ? appState.transactions.length : 0,
+        customerCount: appState.customers ? appState.customers.length : 0,
+        nakitKasa: formatTL(nakit)
+      };
+      latest.snapshot = JSON.parse(JSON.stringify(appState));
+      saveInternalBackups(backups);
+
+      if (window.chrome && window.chrome.webview) {
+        try {
+          window.chrome.webview.postMessage(JSON.stringify({
+            type: 'INTERNAL_BACKUP_CREATED',
+            id: latest.id,
+            date: latest.dateFormatted,
+            title: latest.title,
+            data: latest.snapshot
+          }));
+        } catch (e) {}
+      }
+    } else {
+      createInternalBackup(`Otomatik Anlık Yedek (${timeStr})`, true);
+    }
+  } catch (e) {
+    console.warn("Otomatik yedekleme uyarısı:", e);
+  }
+}
+
+function _noopPlaceholder() {
+}
+
+// ==================== GECE / KOYU TEMA (DARK MODE) ====================
+const THEME_STORAGE_KEY = 'serhat_kasa_theme_v1';
+
+function initTheme() {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'light';
+  applyTheme(savedTheme);
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.contains('dark-theme');
+  const nextTheme = isDark ? 'light' : 'dark';
+  localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+  applyTheme(nextTheme);
+}
+
+function applyTheme(theme) {
+  const isDark = theme === 'dark';
+  document.body.classList.toggle('dark-theme', isDark);
+  const textEl = document.getElementById('themeToggleText');
+  const btnEl = document.getElementById('btnThemeToggle');
+  if (textEl) textEl.textContent = isDark ? 'Açık Tema' : 'Koyu Tema';
+  if (btnEl) {
+    const iconHolder = btnEl.querySelector('i, svg');
+    if (iconHolder) {
+      const newIcon = document.createElement('i');
+      newIcon.id = 'themeToggleIcon';
+      newIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+      iconHolder.replaceWith(newIcon);
+    }
+  }
+  refreshIcons();
+}
+
+function _noopPlaceholder2() {
+}
+
+// ==================== ULAŞ METAL BİREBİR 60x60 TAVAN HESABI VE TEK m² FİYAT SİSTEMİ ====================
+const METRAJ_M2_PRICE_KEY = 'serhat_kasa_metraj_m2_price_v2';
+
+function getSavedMetrajM2Price() {
+  try {
+    const raw = localStorage.getItem(METRAJ_M2_PRICE_KEY);
+    if (raw !== null && raw !== '') {
+      const val = parseFloat(raw);
+      if (!isNaN(val) && val >= 0) return val;
+    }
+  } catch (e) {}
+  return 550;
+}
+
+function saveMetrajM2Price(val) {
+  try {
+    localStorage.setItem(METRAJ_M2_PRICE_KEY, String(val));
+  } catch (e) {}
+}
+
+function renderStandardPvcInputs(container) {
+  const savedM2Price = getSavedMetrajM2Price();
+  container.innerHTML = `
+    <h4><i data-lucide="layout-grid"></i> 60x60 Plastik Tavan Yıldız Hesaplama</h4>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>En (Metre)</label>
+        <input type="number" step="0.1" min="0" id="calcPvcWidth" value="6" placeholder="Örn: 4" oninput="onPvcDimInput()">
+      </div>
+      <div class="form-group">
+        <label>Boy (Metre)</label>
+        <input type="number" step="0.1" min="0" id="calcPvcLength" value="6" placeholder="Örn: 8" oninput="onPvcDimInput()">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Toplam Alan (m²) *</label>
+        <input type="number" step="0.1" min="0.5" id="calcPvcArea" value="36" oninput="onPvcDirectM2Input()">
+      </div>
+      <div class="form-group">
+        <label>m² Birim Fiyatı (TL) *</label>
+        <input type="number" step="1" min="0" id="calcPvcM2Price" value="${savedM2Price}" placeholder="m² Fiyatı" oninput="onMetrajM2PriceInput(this.value, 'left')">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Tavan Plaka Türü</label>
+      <select id="calcPvcPlateType" onchange="calculateMetraj()">
+        <option value="60x60 Plastik Tavan Yıldız" selected>60x60 Plastik Tavan Yıldız</option>
+        <option value="60x60 PVC / Karolam Asma Tavan Plakası">60x60 PVC / Karolam Plaka (Silinebilir)</option>
+        <option value="60x60 Tam PVC Banyo/WC Tavan Plakası">60x60 Tam PVC Plaka (Neme/Suya Dayanıklı)</option>
+        <option value="60x60 Taşyünü Akustik Tavan Plakası">60x60 Taşyünü Akustik Tavan Plakası</option>
+        <option value="60x60 Metal Asma Tavan Plakası">60x60 Metal Clip-in / Lay-in Plaka</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Paket İçi Plaka Adedi</label>
+        <select id="calcPvcPackSize" onchange="calculateMetraj()">
+          <option value="20" selected>20 Adet (1 Paket = 7,20 m²)</option>
+          <option value="10">10 Adet (1 Paket = 3,60 m²)</option>
+          <option value="8">8 Adet (1 Paket = 2,88 m²)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Kesim Fire Payı</label>
+        <select id="calcPvcWaste" onchange="calculateMetraj()">
+          <option value="0" selected>%0 (Firesiz Net Hesap)</option>
+          <option value="5">%5 Kesim Payı Ekle</option>
+          <option value="10">%10 Çok Köşeli Alan</option>
+        </select>
+      </div>
+    </div>
+  `;
+}
+
+function onPvcDimInput() {
+  const wEl = document.getElementById('calcPvcWidth');
+  const lEl = document.getElementById('calcPvcLength');
+  const aEl = document.getElementById('calcPvcArea');
+  const w = parseFloat(String(wEl?.value || '').replace(',', '.')) || 0;
+  const l = parseFloat(String(lEl?.value || '').replace(',', '.')) || 0;
+  if (w > 0 && l > 0 && aEl) {
+    const areaVal = Math.round(w * l * 100) / 100;
+    aEl.value = areaVal;
+  }
+  pvcInputMode = (w > 0 && l > 0) ? 'dimensions' : 'area';
+  calculateMetraj();
+}
+
+function onPvcDirectM2Input() {
+  const wEl = document.getElementById('calcPvcWidth');
+  const lEl = document.getElementById('calcPvcLength');
+  if (wEl) wEl.value = 0;
+  if (lEl) lEl.value = 0;
+  pvcInputMode = 'area';
+  calculateMetraj();
+}
+
+function computeStandardPvcTavan(effectiveArea, area, perimeter, packSize, packAreaM2, plateType, wastePct) {
+  const w = parseFloat(String(document.getElementById('calcPvcWidth')?.value || '0').replace(',', '.')) || 0;
+  const l = parseFloat(String(document.getElementById('calcPvcLength')?.value || '0').replace(',', '.')) || 0;
+  const aInput = parseFloat(String(document.getElementById('calcPvcArea')?.value || '0').replace(',', '.')) || 0;
+  const factor = 1 + ((wastePct || 0) / 100);
+
+  let finalArea = area;
+  let plateCount = 0;
+  let mainRunnerCount = 0;
+  let crossTee60Count = 0;
+  let crossTee120Count = 0;
+  let wallAngleCount = 0;
+  let celikDubelCount = 0;
+  let askiTeliCount = 0;
+  let ciftYayliMasaCount = 0;
+  let dubelVidaPaketCount = 1;
+
+  if (w > 0 && l > 0) {
+    finalArea = w * l;
+    const enTiles = Math.ceil((w / 0.3) - 1e-9) / 2;
+    const boyTiles = Math.ceil((l / 0.3) - 1e-9) / 2;
+    plateCount = Math.floor((enTiles * boyTiles * factor) + 1e-9) + 1;
+
+    const enLines = Math.floor((w / 1.2) + 1e-9) + 1;
+    mainRunnerCount = Math.floor(((enLines * l * factor) / 3.6) + 1e-9) + 1;
+    crossTee60Count = mainRunnerCount * 6;
+    crossTee120Count = mainRunnerCount * 6;
+    wallAngleCount = Math.floor((((w + l) * 2 * factor) / 3) + 1e-9) + 1;
+    celikDubelCount = mainRunnerCount * 3;
+    askiTeliCount = mainRunnerCount * 6;
+    ciftYayliMasaCount = mainRunnerCount * 3;
+    dubelVidaPaketCount = Math.max(1, Math.round(wallAngleCount * 0.06));
+  } else {
+    finalArea = aInput > 0 ? aInput : Math.max(0.5, area);
+    const effArea = finalArea * factor;
+    plateCount = Math.floor((effArea / 0.36) + 1e-9) + 1;
+    mainRunnerCount = Math.floor(((effArea * 0.83) / 3.6) + 1e-9) + 1;
+    crossTee60Count = Math.floor(((effArea * 0.83) / 0.6) + 1e-9) + 1;
+    crossTee120Count = Math.floor(((effArea * 1.67) / 1.2) + 1e-9) + 1;
+    wallAngleCount = Math.floor(((effArea * 0.6) / 3) + 1e-9) + 1;
+    celikDubelCount = Math.floor((effArea * 0.6) + 1e-9) + 1;
+    askiTeliCount = celikDubelCount * 2;
+    ciftYayliMasaCount = celikDubelCount;
+    dubelVidaPaketCount = Math.max(1, Math.round(wallAngleCount * 0.06));
+  }
+
+  const packCount = Math.max(1, Math.ceil((plateCount / packSize) - 1e-9));
+  const m2Price = getSavedMetrajM2Price();
+  const totalCost = finalArea * m2Price;
+
+  const items = [
+    { name: plateType || '60x60 Plastik Tavan Yıldız', qty: plateCount, unit: 'adet' },
+    { name: '3600 mm Ana Taşıyıcı', qty: mainRunnerCount, unit: 'adet' },
+    { name: 'Tali Taşıyıcı 60cm', qty: crossTee60Count, unit: 'adet' },
+    { name: 'Tali Taşıyıcı 120cm', qty: crossTee120Count, unit: 'adet' },
+    { name: 'L Köşebent 3000 mm', qty: wallAngleCount, unit: 'adet' },
+    { name: 'Çelik Dübel', qty: celikDubelCount, unit: 'adet' },
+    { name: 'Askı Teli 40cm', qty: askiTeliCount, unit: 'adet' },
+    { name: 'Çift Yaylı Maşa', qty: ciftYayliMasaCount, unit: 'adet' },
+    { name: 'Dübel Vida', qty: dubelVidaPaketCount, unit: 'paket' }
+  ];
+
+  currentMetrajCalculated.numericArea = finalArea;
+
+  const dimLabel = (w > 0 && l > 0) ? `${w}m x ${l}m / ${finalArea} m²` : `${finalArea} m²`;
+
+  const summaryCardsHtml = `
+    <div class="metraj-summary-box">
+      <span class="sum-label">Hesaplanan Alan</span>
+      <span class="sum-val">${dimLabel}</span>
+      <span class="sum-sub">${plateCount} adet plaka (~${packCount} paket)</span>
+    </div>
+    <div class="metraj-summary-box">
+      <span class="sum-label">m² Birim Fiyatı</span>
+      <span class="sum-val" id="metrajSummaryM2Price">${formatTL(m2Price)}/m²</span>
+      <span class="sum-sub">Tek m² fiyatı üzerinden hesaplanır</span>
+    </div>
+    <div class="metraj-summary-box">
+      <span class="sum-label">Toplam Tutar (${finalArea} m²)</span>
+      <span class="sum-val" id="metrajSummaryGrandTotal" style="color:#059669;">${formatTL(totalCost)}</span>
+      <span class="sum-sub">${finalArea} m² × ${formatTL(m2Price)}</span>
+    </div>
+  `;
+
+  return {
+    title: `${plateType || '60x60 Plastik Tavan Yıldız'} (${dimLabel})`,
+    subtitle: `Standart Sistem Malzeme Listesi (${dimLabel})`,
+    summaryCardsHtml,
+    tipHtml: `<strong>💡 Pratik Fiyatlandırma:</strong> Tek tek malzemelere birim fiyat girmenize gerek yoktur; sadece <strong>m² Birim Fiyatı</strong> girmeniz yeterlidir. Malzeme adetleri <strong>En × Boy</strong> veya <strong>m²</strong> ölçüsüne göre otomatik hesaplanır.`,
+    items,
+    numericArea: finalArea
+  };
+}
+
+function getActiveMetrajAreaNumeric() {
+  if (activeMetrajCategory === 'pvc_tavan') {
+    const w = parseFloat(String(document.getElementById('calcPvcWidth')?.value || '0').replace(',', '.')) || 0;
+    const l = parseFloat(String(document.getElementById('calcPvcLength')?.value || '0').replace(',', '.')) || 0;
+    if (w > 0 && l > 0) return Math.round(w * l * 100) / 100;
+    return parseFloat(String(document.getElementById('calcPvcArea')?.value || '0').replace(',', '.')) || 0;
+  }
+  const m = String(currentMetrajCalculated.areaText || '').replace(',', '.').match(/([\d.]+)/);
+  return m ? (parseFloat(m[1]) || 0) : 0;
+}
+
+function renderMetrajItemsTable(listEl, items) {
+  const areaNum = getActiveMetrajAreaNumeric();
+  currentMetrajCalculated.numericArea = areaNum;
+  const m2Price = getSavedMetrajM2Price();
+  const grandTotal = areaNum * m2Price;
+
+  const rowsHtml = items.map((it) => {
+    return `
+      <tr>
+        <td style="font-weight:700;">
+          ${escapeHtml(it.name)}
+        </td>
+        <td style="text-align:right; font-weight:800; white-space:nowrap;">
+          ${Number(it.qty).toLocaleString('tr-TR')} ${escapeHtml(it.unit)}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  listEl.innerHTML = `
+    <div class="table-responsive" style="margin-bottom:4px;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Malzeme</th>
+            <th class="text-right">Miktar</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+        <tfoot>
+          <tr style="background:var(--surface-hover); border-top:2px solid var(--border);">
+            <td style="font-weight:700; text-align:right; padding:10px 18px;">
+              m² Birim Fiyatı (${areaNum.toLocaleString('tr-TR')} m² için):
+            </td>
+            <td style="text-align:right; padding:10px 18px; width:190px;">
+              <div style="display:inline-flex; align-items:center; justify-content:flex-end; gap:6px;">
+                <input type="number" step="1" min="0" id="metrajTableM2PriceInput" value="${m2Price}"
+                  style="width:110px; padding:6px 8px; text-align:right; font-weight:800; font-size:0.92rem;"
+                  oninput="onMetrajM2PriceInput(this.value, 'table')"
+                  title="Metrekare satış fiyatını girin">
+                <span style="font-size:0.82rem; font-weight:700; color:var(--text-muted);">TL / m²</span>
+              </div>
+            </td>
+          </tr>
+          <tr style="background:rgba(16, 185, 129, 0.08); border-top:2px solid #10b981;">
+            <td style="font-weight:800; font-size:1rem; text-align:right; padding:12px 18px;">
+              TOPLAM TUTAR (<span id="metrajFooterFormula">${areaNum.toLocaleString('tr-TR')} m² × ${m2Price.toLocaleString('tr-TR')} TL</span>):
+            </td>
+            <td id="metrajFooterGrandTotal" style="font-weight:800; font-size:1.15rem; color:#059669; text-align:right; padding:12px 18px; white-space:nowrap;">
+              ${grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TL
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  `;
+}
+
+function onMetrajM2PriceInput(rawVal, source) {
+  const val = Math.max(0, parseFloat(String(rawVal || '0').replace(',', '.')) || 0);
+  saveMetrajM2Price(val);
+
+  if (source !== 'left') {
+    const leftInput = document.getElementById('calcPvcM2Price');
+    if (leftInput) leftInput.value = val;
+  }
+  if (source !== 'table') {
+    const tableInput = document.getElementById('metrajTableM2PriceInput');
+    if (tableInput) tableInput.value = val;
+  }
+
+  const areaNum = getActiveMetrajAreaNumeric();
+  const grandTotal = areaNum * val;
+
+  const footerEl = document.getElementById('metrajFooterGrandTotal');
+  if (footerEl) {
+    footerEl.textContent = grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' TL';
+  }
+  const formulaEl = document.getElementById('metrajFooterFormula');
+  if (formulaEl) {
+    formulaEl.textContent = `${areaNum.toLocaleString('tr-TR')} m² × ${val.toLocaleString('tr-TR')} TL`;
+  }
+  const sumCardTotalEl = document.getElementById('metrajSummaryGrandTotal');
+  if (sumCardTotalEl) {
+    sumCardTotalEl.textContent = formatTL(grandTotal);
+  }
+  const sumCardM2El = document.getElementById('metrajSummaryM2Price');
+  if (sumCardM2El) {
+    sumCardM2El.textContent = `${formatTL(val)}/m²`;
+  }
+}
+
+function transferMetrajToProposalM2() {
+  openProposalModal();
+  const container = document.getElementById('propRowsContainer');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  const areaNum = getActiveMetrajAreaNumeric();
+  const m2Price = getSavedMetrajM2Price();
+
+  if (areaNum > 0 && m2Price > 0) {
+    addProposalRow({
+      name: `${currentMetrajCalculated.title || '60x60 Asma Tavan Sistemi'} (m² Birim Fiyatı Üzerinden)`,
+      qty: areaNum,
+      unit: 'm²',
+      unitPrice: m2Price,
+      discount: 0
+    });
+  }
+
+  (currentMetrajCalculated.items || []).forEach(item => {
+    addProposalRow({
+      name: item.name,
+      qty: item.qty,
+      unit: item.unit,
+      unitPrice: 0,
+      discount: 0
+    });
+  });
+
+  const notesEl = document.getElementById('propNotes');
+  if (notesEl) {
+    notesEl.value = `${currentMetrajCalculated.title} (${areaNum} m² × ${formatTL(m2Price)}/m² = ${formatTL(areaNum * m2Price)}) tam sistem malzeme listesidir.`;
+  }
+
+  calculateProposalTotals();
+  showToast('⚡ Malzeme listesi ve m² toplam fiyatı Teklif Formuna aktarıldı!');
+}
+
+function buildMetrajShareTextWithPrices(shopName, cleanTitle) {
+  const areaNum = getActiveMetrajAreaNumeric();
+  const m2Price = getSavedMetrajM2Price();
+  const grandTotal = areaNum * m2Price;
+
+  let text = `${cleanTitle}\n`;
+  text += `Malzeme\tMiktar\n`;
+  (currentMetrajCalculated.items || []).forEach((it) => {
+    text += `${it.name}\t${it.qty} ${it.unit}\n`;
+  });
+  text += `\nToplam Alan:\t${areaNum} m²\n`;
+  text += `1 m² Fiyatı:\t${m2Price.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TL\n`;
+  text += `TOPLAM TUTAR:\t${grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TL`;
+  return text;
+}
+
+function buildMetrajHTMLTableWithPrices(shopName, cleanTitle) {
+  const areaNum = getActiveMetrajAreaNumeric();
+  const m2Price = getSavedMetrajM2Price();
+  const grandTotal = areaNum * m2Price;
+
+  let rows = '';
+  (currentMetrajCalculated.items || []).forEach((it, idx) => {
+    const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+    rows += `
+      <tr style="background:${bg};">
+        <td style="padding:8px 10px; border:1px solid #cbd5e1; font-weight:700; color:#0f172a;">${escapeHtml(it.name)}</td>
+        <td style="padding:8px 10px; border:1px solid #cbd5e1; text-align:right; font-weight:700; color:#1e293b; white-space:nowrap;">${it.qty} ${escapeHtml(it.unit)}</td>
+      </tr>
+    `;
+  });
+
+  return `
+    <div style="font-family:Arial,Helvetica,sans-serif; max-width:600px; color:#1e293b; font-size:13px; line-height:1.5;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr style="background:#0f172a; color:#ffffff;">
+            <th style="padding:9px 10px; border:1px solid #0f172a; text-align:left;">Malzeme</th>
+            <th style="padding:9px 10px; border:1px solid #0f172a; text-align:right;">Miktar</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+        <tfoot>
+          <tr style="background:#f8fafc; font-weight:700;">
+            <td style="padding:8px 10px; border:1px solid #cbd5e1; text-align:right;">1 m² Birim Fiyatı (${areaNum} m²):</td>
+            <td style="padding:8px 10px; border:1px solid #cbd5e1; text-align:right;">${m2Price.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TL</td>
+          </tr>
+          <tr style="background:#ecfdf5; font-weight:800;">
+            <td style="padding:9px 10px; border:1px solid #cbd5e1; text-align:right;">TOPLAM TUTAR:</td>
+            <td style="padding:9px 10px; border:1px solid #cbd5e1; text-align:right; color:#059669;">${grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TL</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  `;
+}
+
+function _noopPlaceholder4() {
+}
+
 // Uygulama İçinde Anlık Yedek Oluştur (Dosya indirilmez)
 function createInternalBackup(customTitle, isSilent = false) {
   const backups = getInternalBackups();
@@ -2962,7 +3478,7 @@ function renderInternalBackupsList() {
       <div style="text-align:center; padding: 22px 10px; color: var(--text-muted); background:#fff; border: 1px dashed var(--border-color); border-radius: var(--radius-sm);">
         <i data-lucide="shield-alert" style="width: 28px; height: 28px; margin-bottom: 6px; color: #94a3b8;"></i>
         <div style="font-weight:600; font-size: 0.92rem; color: var(--text-dark); margin-bottom: 3px;">Henüz Kayıtlı Yedek Yok</div>
-        <div style="font-size: 0.8rem;">Yukarıdaki "Yeni Yedek Al" butonuna basarak ilk güvenli geri dönüş noktanızı oluşturabilirsiniz.</div>
+        <div style="font-size: 0.8rem;">İlk işleminizle birlikte tüm kayıtlarınız otomatik olarak burada yedeklenecektir.</div>
       </div>
     `;
     refreshIcons();

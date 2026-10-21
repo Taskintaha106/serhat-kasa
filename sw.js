@@ -1,10 +1,10 @@
-const CACHE_NAME = 'serhat-kasa-pwa-v12';
+const CACHE_NAME = 'serhat-kasa-pwa-v35';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css',
-  './app.js',
-  './firebase-init.js',
+  './style.css?v=35',
+  './app.js?v=35',
+  './firebase-init.js?v=35',
   './lucide.min.js',
   './manifest.json',
   './icon-192.png',
@@ -12,10 +12,11 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
@@ -34,9 +35,8 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Tüm istekler için Network-First: İnternet varsa her zaman en güncel dosyayı çek, çevrimdışıysa önbellekten sun
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-cache' })
       .then((response) => {
         if (response && response.status === 200 && event.request.method === 'GET') {
           const clone = response.clone();
@@ -54,4 +54,3 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
-
